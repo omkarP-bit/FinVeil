@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Home, CreditCard, Building, BarChart3, CheckCircle, Loader2 } from 'lucide-react'
+import {
+  Home, CreditCard, Building, BarChart3, CheckCircle, Loader2,
+  Wallet, FileText, Activity, UserCheck, Sparkles, ArrowRight,
+} from 'lucide-react'
 import PermitModal from '../components/PermitModal'
 import DecisionResult from '../components/DecisionResult'
 import KYCVerifyModal from '../components/KYCVerifyModal'
@@ -12,10 +15,10 @@ import { lensApi, kycApi, profileApi } from '../services/api'
 import { useAccount } from 'wagmi'
 
 const LENSES = [
-  { id: 'rental-readiness', name: 'Rental-Readiness', description: 'For landlords & leasing apps', icon: Home, color: 'bg-blue-50 text-blue-600' },
-  { id: 'bnpl-affordability', name: 'BNPL Affordability', description: 'For buy-now-pay-later apps', icon: CreditCard, color: 'bg-emerald-50 text-emerald-600' },
-  { id: 'credit-tier', name: 'Credit Tier', description: 'For lenders', icon: Building, color: 'bg-amber-50 text-amber-600' },
-  { id: 'budgeting-health', name: 'Budgeting Health', description: 'Personal financial health', icon: BarChart3, color: 'bg-purple-50 text-purple-600' },
+  { id: 'rental-readiness', name: 'Rental-Readiness', description: 'For landlords & leasing apps', icon: Home },
+  { id: 'bnpl-affordability', name: 'BNPL Affordability', description: 'For buy-now-pay-later apps', icon: CreditCard },
+  { id: 'credit-tier', name: 'Credit Tier', description: 'For lenders', icon: Building },
+  { id: 'budgeting-health', name: 'Budgeting Health', description: 'Personal financial health', icon: BarChart3 },
 ]
 
 function getAppNameForLens(lensId: string) {
@@ -139,36 +142,67 @@ export default function Marketplace() {
     : LENSES
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+      {/* Header row */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '24px',
+      }}>
         <div>
-          <div className="flex items-center gap-2 text-sm text-success mb-1">
-            <CheckCircle size={14} />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+            color: 'var(--color-text-dim)',
+            marginBottom: '4px',
+          }}>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: profileStatus?.exists ? 'var(--color-mint)' : 'var(--color-text-dim)',
+              boxShadow: profileStatus?.exists ? '0 0 6px rgba(51, 255, 51, 0.4)' : 'none',
+            }} />
             {profileStatus?.exists ? 'Profile active' : 'No profile yet'}
           </div>
           {profileStatus?.lastUpdatedAt && (
-            <p className="text-xs text-text-muted">Last updated: {new Date(profileStatus.lastUpdatedAt).toLocaleDateString()}</p>
+            <p style={{
+              fontSize: '11px',
+              color: 'var(--color-text-dim)',
+              margin: 0,
+              opacity: 0.7,
+            }}>
+              Last updated: {new Date(profileStatus.lastUpdatedAt).toLocaleDateString()}
+            </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={() => navigate('/build-profile')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-alt text-sm font-medium text-text hover:bg-border transition-colors cursor-pointer"
+            className="btn btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '12px' }}
           >
-            <Shield size={14} />
+            <FileText size={13} strokeWidth={2} />
             {profileStatus?.exists ? 'Update' : 'Build Profile'}
           </button>
           <button
             onClick={() => setKycModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-alt text-sm font-medium text-text hover:bg-border transition-colors cursor-pointer"
+            className="btn btn-ghost"
+            style={{ padding: '8px 16px', fontSize: '12px', borderColor: 'rgba(232, 196, 104, 0.2)', color: 'var(--color-gold)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(232, 196, 104, 0.08)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
-            <Shield size={14} />
+            <UserCheck size={13} strokeWidth={2} />
             KYC
           </button>
         </div>
       </div>
 
-      <div className="mb-6">
+      {/* Demo walkthrough */}
+      <div style={{ marginBottom: '24px' }}>
         <DemoWalkthrough
           activeScene={activeScene}
           onSelectScene={(id) => {
@@ -179,21 +213,50 @@ export default function Marketplace() {
         />
       </div>
 
+      {/* Financial Passport */}
       <FinancialPassport walletAddress={walletAddress} passportScore={passportScore} />
 
-      <h2 className="font-semibold text-text-heading mb-4">
-        {activeLensFilter ? `Lens: ${LENSES.find((l) => l.id === activeLensFilter)?.name}` : 'Apply a lens'}
+      {/* Lens grid heading */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '16px',
+      }}>
+        <h2 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '15px',
+          fontWeight: 600,
+          color: 'var(--color-text-dim)',
+          margin: 0,
+        }}>
+          {activeLensFilter
+            ? `Lens: ${LENSES.find((l) => l.id === activeLensFilter)?.name}`
+            : 'Apply a lens'}
+        </h2>
         {activeLensFilter && (
           <button
             onClick={() => setActiveLensFilter(null)}
-            className="ml-2 text-xs text-text-muted hover:text-text underline cursor-pointer"
+            style={{
+              fontSize: '12px',
+              color: 'var(--color-text-dim)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              opacity: 0.7,
+              fontFamily: 'var(--font-body)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-text)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-text-dim)' }}
           >
             Show all
           </button>
         )}
-      </h2>
+      </div>
 
-      <div className="grid gap-3">
+      {/* Lens cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {filteredLenses.map((lens) => {
           const Icon = lens.icon
           const isSceneTarget = activeLensFilter === lens.id
@@ -201,85 +264,206 @@ export default function Marketplace() {
             <button
               key={lens.id}
               onClick={() => handleRequest(lens)}
-              className={`flex items-center gap-4 p-4 rounded-xl border transition-all text-left cursor-pointer ${
-                isSceneTarget
-                  ? 'border-primary bg-primary/5 shadow-sm'
-                  : 'border-border bg-white hover:border-primary/30 hover:shadow-sm'
-              }`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '16px 18px',
+                borderRadius: '16px',
+                border: `1px solid ${isSceneTarget ? 'rgba(255, 176, 0, 0.2)' : 'var(--color-line)'}`,
+                background: isSceneTarget ? 'rgba(255, 176, 0, 0.04)' : 'var(--color-bg-raised)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.25s',
+                fontFamily: 'var(--font-body)',
+                width: '100%',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSceneTarget) {
+                  e.currentTarget.style.borderColor = 'rgba(255, 176, 0, 0.15)'
+                  e.currentTarget.style.background = 'var(--color-bg-raised-2)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSceneTarget) {
+                  e.currentTarget.style.borderColor = 'var(--color-line)'
+                  e.currentTarget.style.background = 'var(--color-bg-raised)'
+                }
+              }}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${lens.color}`}>
-                <Icon size={20} />
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: isSceneTarget ? 'rgba(255, 176, 0, 0.1)' : 'var(--color-bg-raised-2)',
+                color: isSceneTarget ? 'var(--color-amber)' : 'var(--color-text-dim)',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+              }}>
+                <Icon size={20} strokeWidth={1.8} />
               </div>
-              <div className="flex-1">
-                <p className="font-medium text-sm text-text-heading">{lens.name}</p>
-                <p className="text-xs text-text-muted">{lens.description}</p>
+              <div style={{ flex: 1 }}>
+                <p style={{
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  color: 'var(--color-text)',
+                  margin: 0,
+                }}>
+                  {lens.name}
+                </p>
+                <p style={{
+                  fontSize: '12px',
+                  color: 'var(--color-text-dim)',
+                  margin: '2px 0 0',
+                  opacity: 0.8,
+                }}>
+                  {lens.description}
+                </p>
               </div>
               {completedScenes.includes(lens.id) && (
-                <CheckCircle size={16} className="text-success" />
+                <CheckCircle size={16} strokeWidth={2} style={{ color: 'var(--color-amber)', flexShrink: 0 }} />
               )}
-              <span className="text-text-muted text-sm">→</span>
+              <ArrowRight size={15} strokeWidth={1.8} style={{ color: 'var(--color-text-dim)', flexShrink: 0, opacity: 0.5 }} />
             </button>
           )
         })}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mt-6">
+      {/* Quick nav */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '10px',
+        marginTop: '24px',
+      }}>
         <button
           onClick={() => navigate('/dashboard')}
-          className="px-4 py-3 rounded-xl bg-surface-alt text-sm font-medium text-text hover:bg-border transition-colors cursor-pointer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '14px 16px',
+            borderRadius: '14px',
+            background: 'var(--color-bg-raised)',
+            border: '1px solid var(--color-line)',
+            color: 'var(--color-text-dim)',
+            fontSize: '13px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontFamily: 'var(--font-body)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-line-light)'; e.currentTarget.style.color = 'var(--color-text)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-line)'; e.currentTarget.style.color = 'var(--color-text-dim)' }}
         >
-          📊 Dashboard
+          <Activity size={15} strokeWidth={1.8} />
+          Dashboard
         </button>
         <button
           onClick={() => navigate('/kyc-setup')}
-          className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors cursor-pointer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '14px 16px',
+            borderRadius: '14px',
+            background: 'var(--color-bg-raised)',
+            border: '1px solid var(--color-line)',
+            color: 'var(--color-text-dim)',
+            fontSize: '13px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontFamily: 'var(--font-body)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(232, 196, 104, 0.2)'; e.currentTarget.style.color = 'var(--color-gold)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-line)'; e.currentTarget.style.color = 'var(--color-text-dim)' }}
         >
-          <Shield size={14} className="inline mr-1.5" />
+          <UserCheck size={15} strokeWidth={1.8} />
           KYC Setup
         </button>
         <button
           onClick={() => navigate('/access-log')}
-          className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors cursor-pointer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '14px 16px',
+            borderRadius: '14px',
+            background: 'var(--color-bg-raised)',
+            border: '1px solid var(--color-line)',
+            color: 'var(--color-text-dim)',
+            fontSize: '13px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontFamily: 'var(--font-body)',
+            gridColumn: '1 / -1',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-line-light)'; e.currentTarget.style.color = 'var(--color-text)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-line)'; e.currentTarget.style.color = 'var(--color-text-dim)' }}
         >
-          📋 Access Log
+          <Wallet size={15} strokeWidth={1.8} />
+          Access Log
         </button>
       </div>
 
+      {/* Scoring overlay */}
       {scoring && (
-        <div className="mt-8 bg-white rounded-2xl border border-border p-8 max-w-md mx-auto text-center">
-          <Loader2 size={28} className="animate-spin text-primary mx-auto mb-4" />
-          <p className="text-sm text-text-muted">Computing score...</p>
+        <div style={{
+          marginTop: '32px',
+          background: 'var(--color-bg-raised)',
+          border: '1px solid var(--color-line)',
+          borderRadius: '20px',
+          padding: '36px',
+          maxWidth: '400px',
+          margin: '32px auto 0',
+          textAlign: 'center',
+        }}>
+          <Loader2 size={28} strokeWidth={1.5} style={{ color: 'var(--color-amber)', margin: '0 auto 16px' }} className="btn-spinner" />
+          <p style={{ fontSize: '14px', color: 'var(--color-text-dim)' }}>Computing score...</p>
         </div>
       )}
 
+      {/* Decision */}
       {decision && !scoring && (
-        <div className="mt-8">
+        <div style={{ marginTop: '28px', animation: 'slideUp 0.4s ease' }}>
           <DecisionResult
             appName={decision.appName}
             lensName={decision.lensName}
             tier={decision.tier}
           />
-          <div className="mt-4 flex gap-3">
+          <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
             <button
               onClick={() => setDecision(null)}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors cursor-pointer"
+              className="btn btn-secondary"
+              style={{ flex: 1 }}
             >
               Clear result
             </button>
             {completedScenes.length === 3 && !completedScenes.includes('privacy') && (
               <button
                 onClick={() => completeScene('privacy')}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors cursor-pointer"
+                className="btn btn-primary"
+                style={{ flex: 1 }}
               >
-                Verify Privacy →
+                <Sparkles size={14} strokeWidth={2.5} />
+                Verify Privacy
               </button>
             )}
           </div>
         </div>
       )}
 
+      {/* KYC result */}
       {kycResult && (
-        <div className="mt-8">
+        <div style={{ marginTop: '28px', animation: 'slideUp 0.4s ease' }}>
           <KYCResult
             appName={kycResult.appName}
             identityVerified={kycResult.identityVerified}
@@ -288,19 +472,22 @@ export default function Marketplace() {
           />
           <button
             onClick={() => setKycResult(null)}
-            className="mt-4 w-full px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors cursor-pointer"
+            className="btn btn-secondary"
+            style={{ width: '100%', marginTop: '12px' }}
           >
             Clear result
           </button>
         </div>
       )}
 
+      {/* Privacy verification */}
       {completedScenes.length >= 3 && (
-        <div className="mt-8">
+        <div style={{ marginTop: '24px' }}>
           <PrivacyVerification />
         </div>
       )}
 
+      {/* KYC Verify modal */}
       <KYCVerifyModal
         open={kycModalOpen}
         appName="Northgate Bank"
@@ -308,15 +495,26 @@ export default function Marketplace() {
         onVerify={handleKycVerify}
       />
 
+      {/* KYC verifying overlay */}
       {kycVerifying && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-3">
-            <Loader2 size={28} className="animate-spin text-primary" />
-            <p className="text-sm text-text-muted">Verifying identity...</p>
+        <div className="modal-overlay">
+          <div style={{
+            background: 'var(--color-bg-raised-2)',
+            border: '1px solid var(--color-line)',
+            borderRadius: '20px',
+            padding: '36px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+          }}>
+            <Loader2 size={28} strokeWidth={1.5} style={{ color: 'var(--color-gold)' }} className="btn-spinner" />
+            <p style={{ fontSize: '14px', color: 'var(--color-text-dim)' }}>Verifying identity...</p>
           </div>
         </div>
       )}
 
+      {/* Permit modal */}
       <PermitModal
         open={!!modalLens && !scoring}
         appName={getAppNameForLens(modalLens?.id ?? '')}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, UserCheck, Lock } from 'lucide-react'
 import { kycApi } from '../services/api'
 import { useCofhejs } from '../hooks/useCofhejs'
 import { stringToUint32 } from '../services/cofhejs'
@@ -52,65 +52,119 @@ export default function KYCSetup() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div style={{ maxWidth: '520px', margin: '0 auto' }}>
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text mb-6 cursor-pointer"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '13px',
+          color: 'var(--color-text-dim)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          marginBottom: '28px',
+          padding: 0,
+          fontFamily: 'var(--font-body)',
+          transition: 'color 0.2s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-text)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-text-dim)' }}
       >
         <ArrowLeft size={16} />
         Verify Your Identity (once)
       </button>
 
       {success ? (
-        <div className="bg-success/10 border border-success/20 rounded-2xl p-8 text-center">
-          <Shield size={32} className="text-success mx-auto mb-3" />
-          <p className="text-lg font-semibold text-success">KYC Submitted Successfully!</p>
-          <p className="text-sm text-text-muted mt-2">Redirecting to marketplace...</p>
+        <div style={{
+          background: 'rgba(232, 196, 104, 0.06)',
+          border: '1px solid rgba(232, 196, 104, 0.15)',
+          borderRadius: '20px',
+          padding: '40px',
+          textAlign: 'center',
+          animation: 'slideUp 0.4s ease',
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'rgba(232, 196, 104, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <UserCheck size={28} strokeWidth={2} style={{ color: 'var(--color-gold)' }} />
+          </div>
+          <p style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '18px',
+            fontWeight: 700,
+            color: 'var(--color-gold)',
+            margin: 0,
+          }}>
+            KYC Submitted Successfully!
+          </p>
+          <p style={{
+            fontSize: '14px',
+            color: 'var(--color-text-dim)',
+            marginTop: '8px',
+          }}>
+            Redirecting to marketplace...
+          </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
           <div>
-            <label className="block text-sm font-medium text-text-heading mb-1.5">Full Name</label>
+            <label className="input-label">Full Name</label>
             <input
               type="text"
               value={form.fullName}
               onChange={(e) => setForm({ ...form, fullName: e.target.value })}
               placeholder="John Doe"
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="input-field gold"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-heading mb-1.5">Date of Birth</label>
+            <label className="input-label">Date of Birth</label>
             <input
               type="date"
               value={form.dob}
               onChange={(e) => setForm({ ...form, dob: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="input-field gold"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-heading mb-1.5">Government ID #</label>
+            <label className="input-label">Government ID #</label>
             <input
               type="text"
               value={form.govId}
               onChange={(e) => setForm({ ...form, govId: e.target.value })}
               placeholder="XXX-XX-XXXX"
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="input-field gold"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-heading mb-1.5">Address</label>
+            <label className="input-label">Address</label>
             <input
               type="text"
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               placeholder="123 Main St, City"
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="input-field gold"
             />
           </div>
 
           {error && (
-            <div className="bg-danger/10 border border-danger/20 rounded-xl p-3 text-sm text-danger">
+            <div style={{
+              background: 'rgba(255, 107, 107, 0.08)',
+              border: '1px solid rgba(255, 107, 107, 0.15)',
+              borderRadius: '12px',
+              padding: '14px 16px',
+              fontSize: '13px',
+              color: 'var(--color-danger)',
+            }}>
               {error}
             </div>
           )}
@@ -118,10 +172,24 @@ export default function KYCSetup() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors cursor-pointer disabled:opacity-50"
+            className="btn btn-gold"
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
           >
-            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
-            {submitting ? 'Submitting...' : 'Submit KYC'}
+            {submitting ? (
+              <span className="btn-spinner" style={{ position: 'static', borderColor: '#0A0A0A', borderTopColor: 'transparent' }} />
+            ) : (
+              <Lock size={15} strokeWidth={2.5} />
+            )}
+            {submitting ? 'Encrypting & Submitting...' : 'Submit KYC'}
           </button>
         </form>
       )}

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Shield, Home, User, History, LogOut } from 'lucide-react'
+import { Shield, Home, User, History, LogOut, Wallet } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
@@ -31,60 +31,149 @@ export default function Layout() {
   ]
 
   return (
-    <div className="flex flex-col min-h-svh">
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to="/marketplace" className="flex items-center gap-2 text-primary font-semibold text-lg no-underline">
-            <Shield size={22} />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
+      <header style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        background: 'rgba(6, 16, 13, 0.75)',
+        backdropFilter: 'blur(14px)',
+        borderBottom: '1px solid var(--color-line)',
+      }}>
+        <div style={{
+          maxWidth: '1100px',
+          margin: '0 auto',
+          padding: '12px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <Link to="/marketplace" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            color: 'var(--color-amber)',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: '17px',
+            letterSpacing: '-0.02em',
+            textDecoration: 'none',
+          }}>
+            <Shield size={20} strokeWidth={2.5} />
             FinVeil
           </Link>
-          <nav className="flex items-center gap-1">
+
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {nav.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline transition-colors ${
-                  location.pathname === to
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-text-muted hover:text-text hover:bg-surface-alt'
-                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 14px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  color: location.pathname === to ? 'var(--color-amber)' : 'var(--color-text-dim)',
+                  background: location.pathname === to ? 'rgba(255, 176, 0, 0.08)' : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  if (location.pathname !== to) {
+                    e.currentTarget.style.color = 'var(--color-text)'
+                    e.currentTarget.style.background = 'rgba(255, 176, 0, 0.04)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (location.pathname !== to) {
+                    e.currentTarget.style.color = 'var(--color-text-dim)'
+                    e.currentTarget.style.background = 'transparent'
+                  }
+                }}
               >
-                <Icon size={16} />
+                <Icon size={15} strokeWidth={1.8} />
                 {label}
               </Link>
             ))}
+
             {!isConnected ? (
               <button
                 onClick={handleConnect}
                 disabled={isPending || !primaryConnector}
-                className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-text hover:bg-surface-alt disabled:opacity-60 transition-colors cursor-pointer"
+                className="btn btn-ghost"
+                style={{
+                  marginLeft: '8px',
+                  padding: '8px 16px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                }}
               >
+                <Wallet size={14} strokeWidth={2} />
                 {isPending ? 'Connecting...' : 'Connect Wallet'}
               </button>
             ) : (
-              <div className="ml-2 flex items-center gap-2">
-                <span className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-mono border border-emerald-200">
+              <div style={{ marginLeft: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  padding: '4px 12px',
+                  borderRadius: '999px',
+                  background: 'var(--color-bg-raised)',
+                  border: '1px solid var(--color-line)',
+                  color: 'var(--color-text)',
+                  fontSize: '12px',
+                  fontFamily: 'var(--font-mono)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <span style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: 'var(--color-mint)',
+                    boxShadow: '0 0 6px rgba(51, 255, 51, 0.5)',
+                  }} />
                   {address ? truncateAddress(address) : 'Connected'}
                 </span>
                 <button
                   onClick={() => disconnect()}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-text-muted hover:text-danger hover:bg-red-50 transition-colors cursor-pointer"
+                  className="btn btn-secondary"
+                  style={{ padding: '6px 14px', fontSize: '12px' }}
                 >
                   Disconnect
                 </button>
               </div>
             )}
+
             <button
               onClick={logout}
-              className="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-text-muted hover:text-danger hover:bg-red-50 transition-colors cursor-pointer"
+              className="btn btn-ghost"
+              style={{
+                marginLeft: '4px',
+                padding: '7px 12px',
+                fontSize: '12.5px',
+                fontWeight: 500,
+                border: 'none',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-danger)'
+                e.currentTarget.style.background = 'rgba(255, 107, 107, 0.08)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-text)'
+                e.currentTarget.style.background = 'transparent'
+              }}
             >
-              <LogOut size={16} />
+              <LogOut size={14} strokeWidth={1.8} />
               Sign Out
             </button>
           </nav>
         </div>
       </header>
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6">
+
+      <main style={{ flex: 1, maxWidth: '1100px', width: '100%', margin: '0 auto', padding: '28px 24px' }}>
         <Outlet />
       </main>
     </div>

@@ -1,35 +1,574 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #7c3aed;
-  --color-primary-light: #a78bfa;
-  --color-primary-dark: #5b21b6;
-  --color-surface: #fafafa;
-  --color-surface-alt: #f4f4f5;
-  --color-border: #e4e4e7;
-  --color-text: #3f3f46;
-  --color-text-muted: #a1a1aa;
-  --color-text-heading: #18181b;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  /* ── Background / surface ── */
+  --color-bg: #06100D;
+  --color-bg-raised: #0B1815;
+  --color-bg-raised-2: #0E1D19;
+  --color-bg-raised-3: #122520;
+  --color-line: #1B2E27;
+  --color-line-light: #243B32;
+
+  /* ── Text hierarchy ── */
+  --color-amber: #FFB000;             /* primary headings, key values (score, passport title) */
+  --color-amber-dim: #8A5C00;         /* small-caps labels (WALLET ADDRESS, CREDIBILITY SCORE) */
+  --color-text: #E8E6E0;              /* body / nav text — warm off-white */
+  --color-text-dim: #8A7D70;          /* muted / secondary text */
+  --color-text-heading: #FFB000;      /* h1-h6 default */
+
+  /* ── Accents ── */
+  --color-mint: #33FF33;              /* STATUS-ONLY: dots, badge indicators — NEVER for headings/buttons */
+  --color-mint-dim: #163A2C;
+  --color-mint-subtle: rgba(51, 255, 51, 0.08);
+  --color-gold: #E8C468;              /* KYC / identity verification only */
+  --color-gold-dim: #3A331A;
+  --color-gold-subtle: rgba(232, 196, 104, 0.08);
+
+  /* ── Semantic ── */
+  --color-success: #33FF33;           /* status indicators only */
+  --color-warning: #E8C468;
+  --color-danger: #FF6B6B;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #fafafa;
-  color: var(--color-text);
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+  }
+
+  #root {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::selection {
+    background: rgba(255, 176, 0, 0.2);
+    color: var(--color-text);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-amber);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-family: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+    color: var(--color-text-heading);
+  }
+
+  a {
+    color: var(--color-amber);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  a:hover {
+    opacity: 0.8;
+  }
 }
 
-#root {
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+@layer components {
+  /* ---------- Glass card ---------- */
+  .glass-card {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  }
+
+  .glass-card:hover {
+    border-color: var(--color-line-light);
+    box-shadow: 0 0 30px rgba(255, 176, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-card-glow:hover {
+    border-color: var(--color-line-light);
+    box-shadow: 0 0 40px rgba(255, 176, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+
+  /* ---------- Glass card (gold variant for KYC) ---------- */
+  .glass-card-gold {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .glass-card-gold:hover {
+    border-color: var(--color-gold-dim);
+    box-shadow: 0 0 30px rgba(232, 196, 104, 0.04);
+  }
+
+  /* ---------- Button system ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    line-height: 1;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.06);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn:hover::after {
+    opacity: 1;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-primary {
+    background: var(--color-amber);
+    color: #0A0A0A;
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 24px rgba(255, 176, 0, 0.2);
+  }
+
+  .btn-secondary {
+    background: var(--color-bg-raised-2);
+    color: var(--color-text);
+    border-color: var(--color-line);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-line-light);
+    background: var(--color-bg-raised-3);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-text);
+    border-color: var(--color-line);
+  }
+
+  .btn-ghost:hover {
+    background: var(--color-bg-raised);
+    border-color: var(--color-line-light);
+    color: var(--color-text);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--color-text);
+    border-color: var(--color-line);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--color-text-dim);
+    color: var(--color-text);
+  }
+
+  .btn-danger {
+    background: rgba(255, 107, 107, 0.1);
+    color: var(--color-danger);
+    border-color: rgba(255, 107, 107, 0.2);
+  }
+
+  .btn-danger:hover {
+    background: rgba(255, 107, 107, 0.18);
+    border-color: rgba(255, 107, 107, 0.3);
+  }
+
+  .btn-gold {
+    background: var(--color-gold);
+    color: #0A0A0A;
+  }
+
+  .btn-loading {
+    position: relative;
+    pointer-events: none;
+  }
+
+  .btn-loading .btn-text {
+    opacity: 0.4;
+  }
+
+  .btn-spinner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: btn-spin 0.6s linear infinite;
+  }
+
+  @keyframes btn-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* ---------- Inputs ---------- */
+  .input-field {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--color-line);
+    background: var(--color-bg-raised);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: var(--font-body);
+    transition: border-color 0.25s, box-shadow 0.25s;
+    outline: none;
+  }
+
+  .input-field::placeholder {
+    color: var(--color-text-dim);
+    opacity: 0.6;
+  }
+
+  .input-field:focus {
+    border-color: var(--color-amber);
+    box-shadow: 0 0 0 3px rgba(255, 176, 0, 0.08);
+  }
+
+  .input-field:focus.gold {
+    border-color: var(--color-gold);
+    box-shadow: 0 0 0 3px rgba(232, 196, 104, 0.08);
+  }
+
+  .input-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    margin-bottom: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  .input-error {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1) !important;
+  }
+
+  /* ---------- Checkbox / toggle ---------- */
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--color-line);
+    background: var(--color-bg-raised);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    font-size: 14px;
+    color: var(--color-text);
+  }
+
+  .checkbox-label:hover {
+    border-color: var(--color-line-light);
+    background: var(--color-bg-raised-2);
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--color-line-light);
+    border-radius: 5px;
+    background: var(--color-bg-raised-2);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .checkbox-label input[type="checkbox"]:checked {
+    background: var(--color-amber);
+    border-color: var(--color-amber);
+    box-shadow: 0 0 12px rgba(255, 176, 0, 0.2);
+  }
+
+  .checkbox-label input[type="checkbox"]:checked::after {
+    content: "";
+    width: 5px;
+    height: 9px;
+    border: solid #06100D;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-top: -1px;
+  }
+
+  .checkbox-label.gold input[type="checkbox"]:checked {
+    background: var(--color-gold);
+    border-color: var(--color-gold);
+    box-shadow: 0 0 12px rgba(232, 196, 104, 0.2);
+  }
+
+  /* ---------- Select ---------- */
+  .select-field {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--color-line);
+    background: var(--color-bg-raised);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: var(--font-body);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .select-field:focus {
+    border-color: var(--color-amber);
+    box-shadow: 0 0 0 3px rgba(255, 176, 0, 0.08);
+  }
+
+  /* ---------- Badge ---------- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+  }
+
+  .badge-amber {
+    background: rgba(255, 176, 0, 0.1);
+    color: var(--color-amber);
+    border: 1px solid rgba(255, 176, 0, 0.2);
+  }
+
+  .badge-gold {
+    background: rgba(232, 196, 104, 0.1);
+    color: var(--color-gold);
+    border: 1px solid rgba(232, 196, 104, 0.2);
+  }
+
+  .badge-danger {
+    background: rgba(255, 107, 107, 0.1);
+    color: var(--color-danger);
+    border: 1px solid rgba(255, 107, 107, 0.2);
+  }
+
+  .badge-success {
+    background: rgba(51, 255, 51, 0.1);
+    color: var(--color-success);
+    border: 1px solid rgba(51, 255, 51, 0.2);
+  }
+
+  /* ---------- Modal overlay ---------- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 16, 13, 0.7);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-panel {
+    background: var(--color-bg-raised-2);
+    border: 1px solid var(--color-line);
+    border-radius: 20px;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 440px;
+    margin: 0 16px;
+    padding: 28px;
+    animation: slideUp 0.25s ease;
+  }
+
+  /* ---------- Status dot ---------- */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .status-dot-active {
+    background: var(--color-mint);
+    box-shadow: 0 0 8px rgba(51, 255, 51, 0.4);
+  }
+
+  .status-dot-inactive {
+    background: var(--color-text-dim);
+    opacity: 0.4;
+  }
 }
 
+/* ---------- Animations ---------- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 176, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255, 176, 0, 0.2);
+  }
+}
+
+@keyframes beam-sweep {
+  0% {
+    transform: translateX(-30%) translateY(-20%) rotate(15deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(130%) translateY(20%) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--color-bg-raised) 25%, var(--color-bg-raised-2) 50%, var(--color-bg-raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ---------- Financial Passport (moved from original CSS) ---------- */
 .financial-passport {
   perspective: 1200px;
 }
@@ -51,18 +590,12 @@ body {
 }
 
 .font-space-mono {
-  font-family: 'Space Mono', 'Courier New', monospace;
+  font-family: "JetBrains Mono", "Space Mono", "Courier New", monospace;
 }
 
 .financial-passport-scanlines {
   opacity: 0.04;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 176, 0, 0.45) 0px,
-    rgba(255, 176, 0, 0.45) 1px,
-    transparent 1px,
-    transparent 4px
-  );
+  background: repeating-linear-gradient(to bottom, rgba(255, 176, 0, 0.2) 0px, rgba(255, 176, 0, 0.2) 1px, transparent 1px, transparent 4px);
 }
 
 .financial-passport-text {
@@ -78,7 +611,6 @@ body {
   0% {
     opacity: 0.95;
   }
-
   100% {
     opacity: 1;
   }
@@ -89,7 +621,6 @@ body {
   49% {
     opacity: 1;
   }
-
   50%,
   100% {
     opacity: 0;
@@ -97,6 +628,14 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .financial-passport-inner {
     transition-duration: 0ms !important;
   }

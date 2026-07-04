@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Shield, Check, AlertTriangle } from 'lucide-react'
+import { X, Shield, Check, AlertTriangle, Clock } from 'lucide-react'
 
 interface KYCVerifyModalProps {
   open: boolean
@@ -19,46 +19,105 @@ export default function KYCVerifyModal({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-text-heading flex items-center gap-2">
-            <Shield size={20} className="text-primary" />
+    <div className="modal-overlay">
+      <div className="modal-panel">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+        }}>
+          <h2 style={{
+            fontSize: '17px',
+            fontWeight: 600,
+            fontFamily: 'var(--font-display)',
+            color: 'var(--color-text-heading)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            margin: 0,
+          }}>
+            <Shield size={18} strokeWidth={2} style={{ color: 'var(--color-gold)' }} />
             Verify Identity?
           </h2>
-          <button onClick={onDeny} className="text-text-muted hover:text-text cursor-pointer">
-            <X size={20} />
+          <button
+            onClick={onDeny}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--color-text-dim)',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '8px',
+              display: 'flex',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-raised)'; e.currentTarget.style.color = 'var(--color-text)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-dim)' }}
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <p className="text-sm text-text mb-4">
-          <span className="font-medium text-text-heading">{appName}</span> wants to
+        <p style={{
+          fontSize: '14px',
+          color: 'var(--color-text-dim)',
+          marginBottom: '20px',
+          lineHeight: 1.5,
+        }}>
+          <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{appName}</span> wants to
           confirm your identity for a loan application.
         </p>
 
-        <div className="bg-surface-alt rounded-xl p-4 mb-4 space-y-2">
-          <p className="text-sm font-medium text-text-heading">They will receive:</p>
-          <div className="flex items-center gap-2 text-sm text-success">
-            <Check size={14} />
+        <div style={{
+          background: 'var(--color-bg-raised)',
+          borderRadius: '14px',
+          padding: '18px',
+          marginBottom: '20px',
+          border: '1px solid var(--color-line)',
+        }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)', margin: '0 0 10px' }}>
+            They will receive:
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-gold)' }}>
+            <Check size={14} strokeWidth={2.5} />
             Verified: Yes / No
           </div>
-          <div className="flex items-center gap-2 text-sm text-success">
-            <Check size={14} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-gold)', marginTop: '6px' }}>
+            <Check size={14} strokeWidth={2.5} />
             Age &ge; 18: Yes / No
           </div>
-          <p className="text-sm font-medium text-text-heading mt-3">They will NOT receive:</p>
-          <div className="flex items-center gap-2 text-sm text-text-muted">
-            <AlertTriangle size={14} />
+
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text)', margin: '16px 0 10px' }}>
+            They will NOT receive:
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-text-dim)' }}>
+            <AlertTriangle size={14} strokeWidth={1.8} />
             Name, ID number, address
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-6">
-          <label className="text-sm font-medium text-text">Session expires in:</label>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '24px',
+        }}>
+          <label style={{
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'var(--color-text-dim)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
+            <Clock size={14} strokeWidth={1.8} />
+            Session expires in:
+          </label>
           <select
             value={expiry}
             onChange={(e) => setExpiry(Number(e.target.value))}
-            className="border border-border rounded-lg px-3 py-1.5 text-sm bg-white text-text"
+            className="select-field"
           >
             <option value={5}>5 minutes</option>
             <option value={15}>15 minutes</option>
@@ -67,16 +126,18 @@ export default function KYCVerifyModal({
           </select>
         </div>
 
-        <div className="flex gap-3">
+        <div style={{ display: 'flex', gap: '12px' }}>
           <button
             onClick={onDeny}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors cursor-pointer"
+            className="btn btn-secondary"
+            style={{ flex: 1 }}
           >
             Deny
           </button>
           <button
             onClick={() => onVerify(expiry)}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors cursor-pointer"
+            className="btn btn-gold"
+            style={{ flex: 1, border: 'none' }}
           >
             Verify Once
           </button>

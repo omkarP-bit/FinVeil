@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, ChevronRight, CheckCircle, Home, CreditCard, Building, Search } from 'lucide-react'
+import { Play, ChevronDown, CheckCircle, Home, CreditCard, Building, Search, Sparkles } from 'lucide-react'
 
 const SCENES = [
   {
@@ -9,7 +9,6 @@ const SCENES = [
     lensId: 'rental-readiness',
     appName: 'GreenLeaf Rentals',
     icon: Home,
-    color: 'bg-blue-50 text-blue-600',
     expectedOutcome: 'Alice\'s strong financial profile → Tier A — Approved',
   },
   {
@@ -19,7 +18,6 @@ const SCENES = [
     lensId: 'bnpl-affordability',
     appName: 'PayLater Co.',
     icon: CreditCard,
-    color: 'bg-emerald-50 text-emerald-600',
     expectedOutcome: 'Bob\'s moderate profile → Tier B — Approved',
   },
   {
@@ -29,7 +27,6 @@ const SCENES = [
     lensId: 'credit-tier',
     appName: 'Northgate Bank',
     icon: Building,
-    color: 'bg-amber-50 text-amber-600',
     expectedOutcome: 'Charlie\'s high risk profile → Declined',
   },
   {
@@ -39,7 +36,6 @@ const SCENES = [
     lensId: null,
     appName: null,
     icon: Search,
-    color: 'bg-purple-50 text-purple-600',
     expectedOutcome: 'All privacy checks pass. Zero plaintext financial data on-chain.',
   },
 ]
@@ -56,59 +52,178 @@ export default function DemoWalkthrough({ activeScene, onSelectScene, completedS
   const allComplete = completedScenes.length === SCENES.length
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-primary/20 overflow-hidden">
+    <div style={{
+      background: 'var(--color-bg-raised)',
+      border: '1px solid var(--color-line)',
+      borderRadius: '16px',
+      overflow: 'hidden',
+    }}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center justify-between bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
+        style={{
+          width: '100%',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: allComplete ? 'rgba(255, 176, 0, 0.04)' : 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--color-text)',
+          transition: 'background 0.2s',
+          fontFamily: 'var(--font-body)',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 176, 0, 0.06)' }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = allComplete ? 'rgba(255, 176, 0, 0.04)' : 'transparent'
+        }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Play size={16} className="text-primary" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            background: allComplete ? 'rgba(255, 176, 0, 0.1)' : 'var(--color-bg-raised-2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: allComplete ? 'var(--color-amber)' : 'var(--color-text-dim)',
+          }}>
+            {allComplete ? <Sparkles size={16} strokeWidth={2} /> : <Play size={16} strokeWidth={2} />}
           </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-text-heading">
+          <div style={{ textAlign: 'left' }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--color-text-heading)',
+              margin: 0,
+            }}>
               {allComplete ? 'Demo Complete!' : 'Demo Walkthrough'}
             </p>
-            <p className="text-xs text-text-muted">
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--color-text-dim)',
+              margin: '2px 0 0',
+            }}>
               {allComplete
                 ? 'All 4 scenes completed. Privacy is preserved end-to-end.'
                 : `${completedScenes.length}/${SCENES.length} scenes completed`}
             </p>
           </div>
         </div>
-        <ChevronRight size={18} className={`text-text-muted transition-transform ${expanded ? 'rotate-90' : ''}`} />
+        <ChevronDown
+          size={18}
+          strokeWidth={1.8}
+          style={{
+            color: 'var(--color-text-dim)',
+            transition: 'transform 0.25s',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        />
       </button>
 
       {expanded && (
-        <div className="border-t border-border p-3 space-y-2">
+        <div style={{
+          borderTop: '1px solid var(--color-line)',
+          padding: '10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          animation: 'slideDown 0.25s ease',
+        }}>
           {SCENES.map((scene) => {
             const Icon = scene.icon
             const isActive = activeScene === scene.id
             const isCompleted = completedScenes.includes(scene.id)
+            const isDisabled = scene.id === 'privacy' && !allComplete
 
             return (
               <button
                 key={scene.id}
                 onClick={() => onSelectScene(isActive ? null : scene.id)}
-                disabled={scene.id === 'privacy' && !allComplete}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-primary/10 border border-primary/30'
+                disabled={isDisabled}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  textAlign: 'left',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  fontFamily: 'var(--font-body)',
+                  border: isActive
+                    ? '1px solid var(--color-amber-dim)'
                     : isCompleted
-                      ? 'bg-success/5 border border-success/20'
-                      : 'bg-surface-alt/50 border border-transparent hover:bg-surface-alt'
-                } ${scene.id === 'privacy' && !allComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      ? '1px solid var(--color-line-light)'
+                      : '1px solid transparent',
+                  background: isActive
+                    ? 'rgba(255, 176, 0, 0.06)'
+                    : isCompleted
+                      ? 'var(--color-bg-raised-2)'
+                      : 'transparent',
+                  opacity: isDisabled ? 0.4 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive && !isDisabled) {
+                    e.currentTarget.style.background = 'var(--color-bg-raised-2)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = isCompleted
+                      ? 'var(--color-bg-raised-2)'
+                      : 'transparent'
+                  }
+                }}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${scene.color}`}>
-                  {isCompleted ? <CheckCircle size={16} className="text-success" /> : <Icon size={16} />}
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  background: isCompleted
+                    ? 'rgba(255, 176, 0, 0.1)'
+                    : 'var(--color-bg-raised-2)',
+                }}>
+                  {isCompleted ? (
+                    <CheckCircle size={14} strokeWidth={2.5} style={{ color: 'var(--color-amber)' }} />
+                  ) : (
+                    <Icon size={14} strokeWidth={1.8} style={{ color: isActive ? 'var(--color-amber)' : 'var(--color-text-dim)' }} />
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-medium ${isActive ? 'text-primary' : isCompleted ? 'text-success' : 'text-text-heading'}`}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    color: isActive
+                      ? 'var(--color-amber)'
+                      : isCompleted
+                        ? 'var(--color-text)'
+                        : 'var(--color-text-dim)',
+                    margin: 0,
+                  }}>
                     {scene.title}
                   </p>
-                  <p className="text-[10px] text-text-muted truncate">{scene.expectedOutcome}</p>
+                  <p style={{
+                    fontSize: '10px',
+                    color: 'var(--color-text-dim)',
+                    margin: '2px 0 0',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    opacity: 0.7,
+                  }}>
+                    {scene.expectedOutcome}
+                  </p>
                 </div>
-                {isCompleted && <CheckCircle size={14} className="text-success shrink-0" />}
+                {isCompleted && (
+                  <CheckCircle size={13} strokeWidth={2.5} style={{ color: 'var(--color-amber)', flexShrink: 0 }} />
+                )}
               </button>
             )
           })}

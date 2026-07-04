@@ -1,4 +1,4 @@
-import { CheckCircle, Shield } from 'lucide-react'
+import { CheckCircle, Shield, Lock } from 'lucide-react'
 
 interface DecisionResultProps {
   appName: string
@@ -7,25 +7,105 @@ interface DecisionResultProps {
 }
 
 export default function DecisionResult({ appName, lensName, tier }: DecisionResultProps) {
+  const isError = tier.startsWith('Error')
+  const isDeclined = tier.startsWith('Declined')
+  const tierColor = isError
+    ? 'var(--color-danger)'
+    : isDeclined
+      ? 'var(--color-warning)'
+      : 'var(--color-amber)'
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-border p-8 max-w-md mx-auto text-center">
-      <div className="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-        <CheckCircle size={28} className="text-success" />
+    <div style={{
+      background: 'var(--color-bg-raised)',
+      border: `1px solid ${isError ? 'rgba(255, 107, 107, 0.2)' : 'var(--color-line)'}`,
+      borderRadius: '20px',
+      padding: '36px 28px',
+      maxWidth: '440px',
+      margin: '0 auto',
+      textAlign: 'center',
+      animation: 'slideUp 0.4s ease',
+    }}>
+      <div style={{
+        width: '56px',
+        height: '56px',
+        borderRadius: '50%',
+        background: isError
+          ? 'rgba(255, 107, 107, 0.1)'
+          : 'rgba(255, 176, 0, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0 auto 16px',
+      }}>
+        {isError ? (
+          <Shield size={24} strokeWidth={2} style={{ color: 'var(--color-danger)' }} />
+        ) : (
+          <CheckCircle size={24} strokeWidth={2} style={{ color: 'var(--color-amber)' }} />
+        )}
       </div>
 
-      <h3 className="text-sm font-medium text-text-muted mb-1">{appName}</h3>
-      <h2 className="text-xl font-semibold text-text-heading mb-2">{lensName}</h2>
+      <p style={{
+        fontSize: '13px',
+        color: 'var(--color-text-dim)',
+        margin: '0 0 4px',
+        fontFamily: 'var(--font-mono)',
+      }}>
+        {appName}
+      </p>
 
-      <div className="inline-block bg-primary/10 text-primary font-bold text-2xl px-6 py-3 rounded-xl mb-6">
-        {tier}
+      <h2 style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: '18px',
+        fontWeight: 600,
+        color: 'var(--color-text-heading)',
+        margin: '0 0 16px',
+      }}>
+        {lensName}
+      </h2>
+
+      <div style={{
+        display: 'inline-block',
+        background: isError
+          ? 'rgba(255, 107, 107, 0.1)'
+          : 'rgba(255, 176, 0, 0.08)',
+        border: `1px solid ${isError ? 'rgba(255, 107, 107, 0.2)' : 'rgba(255, 176, 0, 0.15)'}`,
+        borderRadius: '12px',
+        padding: '12px 28px',
+        marginBottom: '20px',
+      }}>
+        <span style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '24px',
+          fontWeight: 700,
+          color: tierColor,
+          letterSpacing: '-0.02em',
+        }}>
+          {tier}
+        </span>
       </div>
 
-      <p className="text-sm text-text-muted leading-relaxed">
+      <p style={{
+        fontSize: '13px',
+        color: 'var(--color-text-dim)',
+        lineHeight: 1.6,
+        margin: 0,
+      }}>
         No plaintext financial data was shared with this app.
       </p>
 
-      <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-text-muted">
-        <Shield size={12} />
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '6px',
+        marginTop: '16px',
+        fontSize: '11px',
+        color: 'var(--color-text-dim)',
+        opacity: 0.7,
+        fontFamily: 'var(--font-mono)',
+      }}>
+        <Lock size={11} strokeWidth={2.5} />
         Verified by FinVeil
       </div>
     </div>

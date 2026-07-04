@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Lock } from 'lucide-react'
 import { profileApi } from '../services/api'
 import { useCofhejs } from '../hooks/useCofhejs'
 
@@ -47,20 +47,33 @@ export default function BuildProfile() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div style={{ maxWidth: '520px', margin: '0 auto' }}>
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text mb-6 cursor-pointer"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '13px',
+          color: 'var(--color-text-dim)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          marginBottom: '28px',
+          padding: 0,
+          fontFamily: 'var(--font-body)',
+          transition: 'color 0.2s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-text)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-text-dim)' }}
       >
         <ArrowLeft size={16} />
         Build Your FinVeil Profile
       </button>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
         <div>
-          <label className="block text-sm font-medium text-text-heading mb-1.5">
-            Loan Duration (months)
-          </label>
+          <label className="input-label">Loan Duration (months)</label>
           <input
             type="number"
             min={1}
@@ -68,24 +81,22 @@ export default function BuildProfile() {
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="12"
-            className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="input-field"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-text-heading mb-2">
-            Checking Account Status
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <label className="input-label">Checking Account Status</label>
+          <div className="checkbox-group">
+            <label className="checkbox-label">
               <input type="checkbox" checked={checkNeg} onChange={(e) => { setCheckNeg(e.target.checked); setCheckNone(false); setCheckHigh(false); }} />
               Negative balance (&lt; 0 DM)
             </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <label className="checkbox-label">
               <input type="checkbox" checked={checkNone} onChange={(e) => { setCheckNone(e.target.checked); setCheckNeg(false); setCheckHigh(false); }} />
               No checking account
             </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <label className="checkbox-label">
               <input type="checkbox" checked={checkHigh} onChange={(e) => { setCheckHigh(e.target.checked); setCheckNeg(false); setCheckNone(false); }} />
               High balance (&ge; 200 DM)
             </label>
@@ -93,15 +104,13 @@ export default function BuildProfile() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-text-heading mb-2">
-            Credit History
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <label className="input-label">Credit History</label>
+          <div className="checkbox-group">
+            <label className="checkbox-label">
               <input type="checkbox" checked={creditPaid} onChange={(e) => { setCreditPaid(e.target.checked); setCreditNone(false); }} />
               Existing credits paid back
             </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <label className="checkbox-label">
               <input type="checkbox" checked={creditNone} onChange={(e) => { setCreditNone(e.target.checked); setCreditPaid(false); }} />
               No credits taken
             </label>
@@ -109,7 +118,14 @@ export default function BuildProfile() {
         </div>
 
         {error && (
-          <div className="bg-danger/10 border border-danger/20 rounded-xl p-3 text-sm text-danger">
+          <div style={{
+            background: 'rgba(255, 107, 107, 0.08)',
+            border: '1px solid rgba(255, 107, 107, 0.15)',
+            borderRadius: '12px',
+            padding: '14px 16px',
+            fontSize: '13px',
+            color: 'var(--color-danger)',
+          }}>
             {error}
           </div>
         )}
@@ -117,10 +133,15 @@ export default function BuildProfile() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors cursor-pointer disabled:opacity-50"
+          className="btn btn-primary"
+          style={{ width: '100%', padding: '14px 24px', fontSize: '14px' }}
         >
-          {submitting ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
-          {submitting ? 'Saving...' : 'Save Profile'}
+          {submitting ? (
+            <span className="btn-spinner" />
+          ) : (
+            <Lock size={15} strokeWidth={2.5} />
+          )}
+          {submitting ? 'Encrypting & Saving...' : 'Save Encrypted Profile'}
         </button>
       </form>
     </div>

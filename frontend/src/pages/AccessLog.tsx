@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, Clock, Loader2 } from 'lucide-react'
+import { Loader2, History, Trash2, Shield } from 'lucide-react'
 import { dashboardApi } from '../services/api'
 
 const fallbackPermits = [
@@ -30,53 +30,154 @@ export default function AccessLog() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-primary" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <Loader2 size={24} strokeWidth={1.5} style={{ color: 'var(--color-amber)' }} className="btn-spinner" />
       </div>
     )
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-lg font-semibold text-text-heading mb-6">Access Log</h1>
+    <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+      <h1 style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: 'clamp(20px, 3vw, 26px)',
+        fontWeight: 700,
+        color: 'var(--color-text-heading)',
+        letterSpacing: '-0.02em',
+        marginBottom: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+      }}>
+        <History size={22} strokeWidth={1.8} style={{ color: 'var(--color-amber)' }} />
+        Access Log
+      </h1>
 
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {permits.map((p, i) => (
           <div
             key={i}
-            className="bg-white rounded-xl border border-border p-4 flex items-center justify-between"
+            style={{
+              background: 'var(--color-bg-raised)',
+              border: '1px solid var(--color-line)',
+              borderRadius: '14px',
+              padding: '16px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              transition: 'border-color 0.2s',
+              animation: 'slideUp 0.3s ease',
+              animationDelay: `${i * 80}ms`,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-line-light)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-line)' }}
           >
-            <div>
-              <p className="text-sm font-medium text-text-heading">{p.app}</p>
-              <p className="text-xs text-text-muted">{p.lens}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: p.status === 'active'
+                  ? 'rgba(255, 176, 0, 0.08)'
+                  : 'var(--color-bg-raised-2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Shield size={16} strokeWidth={1.8} style={{
+                  color: p.status === 'active' ? 'var(--color-amber)' : 'var(--color-text-dim)',
+                }} />
+              </div>
+              <div>
+                <p style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: 'var(--color-text)',
+                  margin: 0,
+                }}>
+                  {p.app}
+                </p>
+                <p style={{
+                  fontSize: '12px',
+                  color: 'var(--color-text-dim)',
+                  margin: '2px 0 0',
+                  opacity: 0.7,
+                }}>
+                  {p.lens}
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="flex items-center gap-1.5 text-xs">
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
                 {p.status === 'used' ? (
                   <>
-                    <CheckCircle size={12} className="text-text-muted" />
-                    <span className="text-text-muted">Used</span>
+                    <div style={{
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: 'var(--color-text-dim)',
+                      opacity: 0.4,
+                    }} />
+                    <span style={{
+                      fontSize: '12px',
+                      color: 'var(--color-text-dim)',
+                      opacity: 0.6,
+                      fontFamily: 'var(--font-mono)',
+                    }}>
+                      Used
+                    </span>
                   </>
                 ) : (
                   <>
-                    <Clock size={12} className="text-success" />
-                    <span className="text-success font-medium">Active</span>
+                    <div style={{
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: 'var(--color-mint)',
+                      boxShadow: '0 0 6px rgba(51, 255, 51, 0.4)',
+                    }} />
+                    <span style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: 'var(--color-text)',
+                      fontFamily: 'var(--font-mono)',
+                    }}>
+                      Active
+                    </span>
                   </>
                 )}
               </div>
-              <p className="text-xs text-text-muted mt-0.5">{p.time}</p>
+              <p style={{
+                fontSize: '11px',
+                color: 'var(--color-text-dim)',
+                margin: '3px 0 0',
+                opacity: 0.6,
+              }}>
+                {p.time}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
       {permits.length === 0 && (
-        <div className="text-center py-12 text-text-muted text-sm">
+        <div style={{
+          textAlign: 'center',
+          padding: '48px 0',
+          color: 'var(--color-text-dim)',
+          fontSize: '14px',
+          opacity: 0.6,
+        }}>
           No permit activity yet. Apply a lens to get started.
         </div>
       )}
 
-      <button className="w-full mt-6 px-4 py-3 rounded-xl border border-danger/30 text-sm font-medium text-danger hover:bg-red-50 transition-colors cursor-pointer">
+      <button
+        className="btn btn-danger"
+        style={{ width: '100%', marginTop: '24px', padding: '14px 24px', fontSize: '13px' }}
+      >
+        <Trash2 size={14} strokeWidth={2} />
         Revoke all active permits
       </button>
     </div>

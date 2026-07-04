@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Shield, CheckCircle, XCircle, Loader2, ExternalLink } from 'lucide-react'
+import { Shield, CheckCircle, XCircle, Loader2, ExternalLink, ChevronDown } from 'lucide-react'
 import { verifyApi } from '../services/api'
 
 interface PrivacyCheck {
@@ -37,49 +37,127 @@ export default function PrivacyVerification() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 size={20} className="animate-spin text-primary" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0' }}>
+        <Loader2 size={20} className="btn-spinner" style={{ position: 'static' }} />
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden">
+    <div style={{
+      background: 'var(--color-bg-raised)',
+      border: '1px solid var(--color-line)',
+      borderRadius: '16px',
+      overflow: 'hidden',
+    }}>
       <button
         onClick={() => setShowDetails(!showDetails)}
-        className="w-full p-4 flex items-center justify-between hover:bg-surface-alt/50 transition-colors cursor-pointer"
+        style={{
+          width: '100%',
+          padding: '18px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--color-text)',
+          transition: 'background 0.2s',
+          fontFamily: 'var(--font-body)',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 176, 0, 0.03)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
       >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${verified ? 'bg-success/10' : 'bg-danger/10'}`}>
-            {verified ? <CheckCircle size={18} className="text-success" /> : <XCircle size={18} className="text-danger" />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: verified ? 'rgba(255, 176, 0, 0.1)' : 'rgba(255, 107, 107, 0.1)',
+          }}>
+            {verified ? (
+              <CheckCircle size={18} strokeWidth={2} style={{ color: 'var(--color-amber)' }} />
+            ) : (
+              <XCircle size={18} strokeWidth={2} style={{ color: 'var(--color-danger)' }} />
+            )}
           </div>
-          <div className="text-left">
-            <p className="text-sm font-medium text-text-heading">
+          <div style={{ textAlign: 'left' }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--color-text-heading)',
+              margin: 0,
+            }}>
               {verified ? 'Privacy Verified' : 'Privacy Check Failed'}
             </p>
-            <p className="text-xs text-text-muted">
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--color-text-dim)',
+              margin: '2px 0 0',
+            }}>
               {verified ? 'No plaintext financial data was exposed' : 'Issues detected'}
             </p>
           </div>
         </div>
-        <Shield size={18} className={verified ? 'text-success' : 'text-text-muted'} />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}>
+          <Shield size={16} strokeWidth={1.8} style={{ color: verified ? 'var(--color-amber)' : 'var(--color-text-dim)' }} />
+          <ChevronDown
+            size={16}
+            strokeWidth={1.8}
+            style={{
+              color: 'var(--color-text-dim)',
+              transition: 'transform 0.25s',
+              transform: showDetails ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          />
+        </div>
       </button>
 
       {showDetails && (
-        <div className="border-t border-border px-4 py-3 space-y-2">
+        <div style={{
+          borderTop: '1px solid var(--color-line)',
+          padding: '16px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          animation: 'slideDown 0.25s ease',
+        }}>
           {checks?.map((check, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs">
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12.5px' }}>
               {check.passed ? (
-                <CheckCircle size={12} className="text-success mt-0.5 shrink-0" />
+                <CheckCircle size={13} strokeWidth={2.5} style={{ color: 'var(--color-amber)', marginTop: '2px', flexShrink: 0 }} />
               ) : (
-                <XCircle size={12} className="text-danger mt-0.5 shrink-0" />
+                <XCircle size={13} strokeWidth={2.5} style={{ color: 'var(--color-danger)', marginTop: '2px', flexShrink: 0 }} />
               )}
-              <span className={check.passed ? 'text-text-muted' : 'text-danger'}>{check.name}</span>
+              <span style={{ color: check.passed ? 'var(--color-text-dim)' : 'var(--color-danger)' }}>{check.name}</span>
             </div>
           ))}
-          <p className="text-xs text-text-muted mt-2 pt-2 border-t border-border">{summary}</p>
-          <div className="flex items-center gap-1 text-xs text-primary mt-1">
-            <ExternalLink size={10} />
+          <p style={{
+            fontSize: '12px',
+            color: 'var(--color-text-dim)',
+            marginTop: '4px',
+            paddingTop: '10px',
+            borderTop: '1px solid var(--color-line)',
+            opacity: 0.8,
+          }}>
+            {summary}
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            color: 'var(--color-amber)',
+            opacity: 0.7,
+          }}>
+            <ExternalLink size={11} strokeWidth={2} />
             <span>View on block explorer (no plaintext visible)</span>
           </div>
         </div>

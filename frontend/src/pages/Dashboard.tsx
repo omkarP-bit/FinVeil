@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArrowUp, TrendingUp, Loader2 } from 'lucide-react'
+import { ArrowUp, TrendingUp, Loader2, Lock, Activity } from 'lucide-react'
 import { dashboardApi } from '../services/api'
 
 const fallbackData = {
@@ -11,11 +11,6 @@ const fallbackData = {
     { label: 'Other', percentage: 8 },
   ],
   anomalies: [{ message: 'Dining spending is up 40% month-over-month', severity: 'warning' as const }],
-}
-
-function getBarColor(index: number): string {
-  const colors = ['bg-primary/20', 'bg-primary/30', 'bg-primary/40', 'bg-primary/50', 'bg-primary/60', 'bg-primary/40', 'bg-primary/50', 'bg-primary/30', 'bg-primary/60', 'bg-primary/50', 'bg-primary/40', 'bg-primary/70']
-  return colors[index % colors.length]
 }
 
 export default function Dashboard() {
@@ -31,8 +26,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-primary" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <Loader2 size={24} strokeWidth={1.5} style={{ color: 'var(--color-amber)' }} className="btn-spinner" />
       </div>
     )
   }
@@ -44,44 +39,116 @@ export default function Dashboard() {
   const isUp = Number(savingsChange) >= 0
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-lg font-semibold text-text-heading mb-6">My Financial Dashboard</h1>
+    <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+      <h1 style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: 'clamp(20px, 3vw, 26px)',
+        fontWeight: 700,
+        color: 'var(--color-text-heading)',
+        letterSpacing: '-0.02em',
+        marginBottom: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+      }}>
+        <Activity size={22} strokeWidth={1.8} style={{ color: 'var(--color-amber)' }} />
+        My Financial Dashboard
+      </h1>
 
-      <div className="bg-white rounded-2xl border border-border p-5 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-text-heading">Savings Rate Trend</h2>
-          <span className={`flex items-center gap-1 text-xs font-medium ${isUp ? 'text-success' : 'text-danger'}`}>
-            <ArrowUp size={12} className={isUp ? '' : 'rotate-180'} />
+      {/* Savings Trend Card */}
+      <div style={{
+        background: 'var(--color-bg-raised)',
+        border: '1px solid var(--color-line)',
+        borderRadius: '18px',
+        padding: '24px',
+        marginBottom: '16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h2 style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color: 'var(--color-text-dim)',
+            margin: 0,
+          }}>
+            Savings Rate Trend
+          </h2>
+          <span style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '12px',
+            fontWeight: 600,
+            color: isUp ? 'var(--color-text)' : 'var(--color-danger)',
+            fontFamily: 'var(--font-mono)',
+          }}>
+            <ArrowUp size={12} strokeWidth={2.5} style={{
+              transform: isUp ? 'rotate(0deg)' : 'rotate(180deg)',
+              transition: 'transform 0.3s',
+            }} />
             {Math.abs(Number(savingsChange))}% this month
           </span>
         </div>
-        <div className="flex items-end gap-1 h-16">
-          {displayData.savingsTrend.map((h: number, i: number) => (
-            <div
-              key={i}
-              className={`flex-1 rounded-t-sm ${getBarColor(i)}`}
-              style={{ height: `${h}%` }}
-            />
-          ))}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '72px' }}>
+          {displayData.savingsTrend.map((h: number, i: number) => {
+            const opacity = 0.3 + (h / 100) * 0.5
+            return (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  height: `${h}%`,
+                  background: `linear-gradient(to top, var(--color-amber), rgba(255, 176, 0, 0.4))`,
+                  borderRadius: '3px 3px 0 0',
+                  opacity,
+                  transition: 'opacity 0.3s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9' }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = `${opacity}` }}
+              />
+            )
+          })}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-border p-5 mb-4">
-        <h2 className="text-sm font-medium text-text-heading mb-3">Spending Breakdown</h2>
-        <div className="space-y-3">
+      {/* Spending Breakdown Card */}
+      <div style={{
+        background: 'var(--color-bg-raised)',
+        border: '1px solid var(--color-line)',
+        borderRadius: '18px',
+        padding: '24px',
+        marginBottom: '16px',
+      }}>
+        <h2 style={{
+          fontSize: '14px',
+          fontWeight: 600,
+          color: 'var(--color-text-dim)',
+          margin: '0 0 18px',
+        }}>
+          Spending Breakdown
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {displayData.spendingBreakdown.map((item: any, i: number) => {
-            const barColors = ['bg-primary', 'bg-amber-500', 'bg-emerald-500', 'bg-slate-400']
+            const barColors = ['#FFB000', '#E8C468', '#6EE7FF', '#8A7D70']
             return (
               <div key={item.label}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-text">{item.label}</span>
-                  <span className="text-text-muted">{item.percentage}%</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                  <span style={{ color: 'var(--color-text)' }}>{item.label}</span>
+                  <span style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{item.percentage}%</span>
                 </div>
-                <div className="h-2 bg-surface-alt rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${barColors[i % barColors.length]}`}
-                    style={{ width: `${item.percentage}%` }}
-                  />
+                <div style={{
+                  height: '6px',
+                  background: 'var(--color-bg-raised-2)',
+                  borderRadius: '999px',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    borderRadius: '999px',
+                    background: barColors[i % barColors.length],
+                    width: `${item.percentage}%`,
+                    transition: 'width 0.6s ease',
+                    opacity: 0.7,
+                  }} />
                 </div>
               </div>
             )
@@ -89,25 +156,65 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Anomalies */}
       {displayData.anomalies.map((a: any, i: number) => (
         <div
           key={i}
-          className={`rounded-2xl p-4 flex items-start gap-3 mb-4 ${
-            a.severity === 'warning'
-              ? 'bg-amber-50 border border-amber-200'
-              : 'bg-red-50 border border-red-200'
-          }`}
+          style={{
+            borderRadius: '16px',
+            padding: '16px 18px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px',
+            marginBottom: '12px',
+            background: a.severity === 'warning'
+              ? 'rgba(232, 196, 104, 0.06)'
+              : 'rgba(255, 107, 107, 0.06)',
+            border: a.severity === 'warning'
+              ? '1px solid rgba(232, 196, 104, 0.15)'
+              : '1px solid rgba(255, 107, 107, 0.15)',
+          }}
         >
-          <TrendingUp size={18} className={`mt-0.5 shrink-0 ${a.severity === 'warning' ? 'text-warning' : 'text-danger'}`} />
+          <TrendingUp size={18} strokeWidth={1.8} style={{
+            color: a.severity === 'warning' ? 'var(--color-warning)' : 'var(--color-danger)',
+            marginTop: '1px',
+            flexShrink: 0,
+          }} />
           <div>
-            <p className="text-sm font-medium text-amber-800">Anomaly Detected</p>
-            <p className="text-xs text-amber-700">{a.message}</p>
+            <p style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: a.severity === 'warning' ? 'var(--color-warning)' : 'var(--color-danger)',
+              margin: 0,
+            }}>
+              Anomaly Detected
+            </p>
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--color-text-dim)',
+              margin: '3px 0 0',
+              opacity: 0.8,
+            }}>
+              {a.message}
+            </p>
           </div>
         </div>
       ))}
 
-      <div className="bg-surface-alt rounded-xl p-3 flex items-center justify-center gap-2 text-xs text-text-muted">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      {/* Privacy notice */}
+      <div style={{
+        background: 'var(--color-bg-raised-2)',
+        borderRadius: '12px',
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        fontSize: '12px',
+        color: 'var(--color-text-dim)',
+        opacity: 0.6,
+      }}>
+        <Lock size={12} strokeWidth={2.5} />
         Only visible to you — decrypted locally.
       </div>
     </div>

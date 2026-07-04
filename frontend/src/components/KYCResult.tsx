@@ -1,4 +1,4 @@
-import { CheckCircle, Shield, Clock } from 'lucide-react'
+import { CheckCircle, Clock, XCircle, Lock } from 'lucide-react'
 
 interface KYCResultProps {
   appName: string
@@ -13,42 +13,122 @@ export default function KYCResult({
   ageMet,
   sessionExpiryMinutes,
 }: KYCResultProps) {
+  const allPassed = identityVerified && ageMet
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-border p-8 max-w-md mx-auto text-center">
-      <div className="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-        <CheckCircle size={28} className="text-success" />
+    <div style={{
+      background: 'var(--color-bg-raised)',
+      border: `1px solid ${allPassed ? 'rgba(232, 196, 104, 0.2)' : 'rgba(255, 107, 107, 0.2)'}`,
+      borderRadius: '20px',
+      padding: '36px 28px',
+      maxWidth: '440px',
+      margin: '0 auto',
+      textAlign: 'center',
+      animation: 'slideUp 0.4s ease',
+    }}>
+      <div style={{
+        width: '56px',
+        height: '56px',
+        borderRadius: '50%',
+        background: allPassed
+          ? 'rgba(232, 196, 104, 0.1)'
+          : 'rgba(255, 107, 107, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0 auto 16px',
+      }}>
+        {allPassed ? (
+          <CheckCircle size={24} strokeWidth={2} style={{ color: 'var(--color-gold)' }} />
+        ) : (
+          <XCircle size={24} strokeWidth={2} style={{ color: 'var(--color-danger)' }} />
+        )}
       </div>
 
-      <h3 className="text-sm font-medium text-text-muted mb-1">{appName}</h3>
+      <p style={{
+        fontSize: '13px',
+        color: 'var(--color-text-dim)',
+        margin: '0 0 16px',
+        fontFamily: 'var(--font-mono)',
+      }}>
+        {appName}
+      </p>
 
-      <div className="space-y-2 my-4">
-        <div className="flex items-center justify-center gap-2 text-sm">
-          {identityVerified ? (
-            <span className="text-success font-medium">✅ Identity Verified</span>
-          ) : (
-            <span className="text-danger font-medium">❌ Identity Not Verified</span>
-          )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          fontSize: '14px',
+          fontWeight: 500,
+        }}>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: identityVerified ? 'var(--color-gold)' : 'var(--color-danger)',
+            boxShadow: identityVerified ? '0 0 8px rgba(232, 196, 104, 0.4)' : 'none',
+          }} />
+          <span style={{ color: identityVerified ? 'var(--color-gold)' : 'var(--color-danger)' }}>
+            {identityVerified ? 'Identity Verified' : 'Identity Not Verified'}
+          </span>
         </div>
-        <div className="flex items-center justify-center gap-2 text-sm">
-          {ageMet ? (
-            <span className="text-success font-medium">✅ Age Requirement Met</span>
-          ) : (
-            <span className="text-danger font-medium">❌ Age Requirement Not Met</span>
-          )}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          fontSize: '14px',
+          fontWeight: 500,
+        }}>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: ageMet ? 'var(--color-gold)' : 'var(--color-danger)',
+            boxShadow: ageMet ? '0 0 8px rgba(232, 196, 104, 0.4)' : 'none',
+          }} />
+          <span style={{ color: ageMet ? 'var(--color-gold)' : 'var(--color-danger)' }}>
+            {ageMet ? 'Age Requirement Met' : 'Age Requirement Not Met'}
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-text-muted">
-        <Clock size={12} />
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '6px',
+        fontSize: '12px',
+        color: 'var(--color-text-dim)',
+        marginBottom: '4px',
+      }}>
+        <Clock size={12} strokeWidth={1.8} />
         Session token expires in {sessionExpiryMinutes} min
       </div>
 
-      <p className="text-xs text-text-muted mt-1">
+      <p style={{
+        fontSize: '12px',
+        color: 'var(--color-text-dim)',
+        opacity: 0.7,
+        margin: 0,
+      }}>
         No personal documents were shared with this bank.
       </p>
 
-      <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-text-muted">
-        <Shield size={12} />
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '6px',
+        marginTop: '14px',
+        fontSize: '11px',
+        color: 'var(--color-text-dim)',
+        opacity: 0.6,
+        fontFamily: 'var(--font-mono)',
+      }}>
+        <Lock size={11} strokeWidth={2.5} />
         Verified by FinVeil
       </div>
     </div>

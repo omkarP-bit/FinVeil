@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Lock, Eye, RefreshCw } from 'lucide-react'
 
 export interface PassportScoreData {
   score: number | null
@@ -40,99 +40,324 @@ export default function FinancialPassport({ walletAddress, passportScore }: Fina
   const statusLabel = isFlipped ? 'Unsealed' : 'Sealed'
 
   const tierAccent = useMemo(() => {
-    if (passportScore.tier === 'Tier A') return 'text-emerald-300'
-    if (passportScore.tier === 'Tier B') return 'text-cyan-300'
-    if (passportScore.tier === 'Tier C') return 'text-amber-300'
-    if (passportScore.tier === 'Declined') return 'text-red-300'
-    return 'text-slate-300'
+    if (passportScore.tier === 'Tier A') return '#FFB000'
+    if (passportScore.tier === 'Tier B') return '#6EE7FF'
+    if (passportScore.tier === 'Tier C') return '#E8C468'
+    if (passportScore.tier === 'Declined') return '#FF6B6B'
+    return '#8A7D70'
   }, [passportScore.tier])
 
   return (
     <button
       type="button"
       onClick={() => setIsFlipped((v) => !v)}
-      className="financial-passport group mb-6 w-full max-w-xl mx-auto cursor-pointer text-left font-space-mono"
+      className="financial-passport"
+      style={{
+        marginBottom: '28px',
+        width: '100%',
+        maxWidth: '540px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        cursor: 'pointer',
+        textAlign: 'left',
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        display: 'block',
+      }}
       aria-label="Flip Financial Passport"
     >
       <div
-        className="financial-passport-inner relative h-[260px] sm:h-[280px] w-full"
+        className="financial-passport-inner"
         style={{
+          position: 'relative',
+          height: '280px',
+          width: '100%',
           transform: cardTransform,
           transitionDuration: reducedMotion ? '0ms' : '600ms',
         }}
       >
-        <div className="financial-passport-face absolute inset-0 border border-[#C9A961]/55 bg-[#0A0A0A] p-4 sm:p-5">
-          <div className="financial-passport-scanlines pointer-events-none absolute inset-0" />
-          <div className="financial-passport-text relative h-full border border-[#C9A961]/35 bg-[#0A0A0A] p-4 sm:p-5">
-            <div className="mb-6 flex items-start justify-between">
+        {/* Front face — Sealed */}
+        <div
+          className="financial-passport-face"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            border: '1px solid var(--color-line)',
+            borderRadius: '20px',
+            background: 'linear-gradient(145deg, #0A0C0B, #0B1815)',
+            padding: '20px',
+            overflow: 'hidden',
+          }}
+        >
+          <div className="financial-passport-scanlines" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+          <div
+            className="financial-passport-text"
+            style={{
+              position: 'relative',
+              height: '100%',
+              border: '1px solid var(--color-line)',
+              borderRadius: '14px',
+              background: 'rgba(0, 0, 0, 0.3)',
+              padding: '20px 22px',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'auto' }}>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[#8A5C00]">Encrypted Identity</p>
-                <h3 className="mt-2 text-2xl sm:text-3xl text-[#FFB000]">
+                <p style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.2em',
+                  color: 'var(--color-amber-dim)',
+                  fontFamily: 'var(--font-mono)',
+                  margin: 0,
+                }}>
+                  Encrypted Identity
+                </p>
+                <h3 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(22px, 3vw, 28px)',
+                  color: 'var(--color-amber)',
+                  margin: '8px 0 0',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                }}>
                   FinVeil Passport
                 </h3>
               </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`h-2.5 w-2.5 ${isFlipped ? 'bg-[#66FF66]' : 'bg-[#33FF33]/70'} rounded-full border border-black/40`}
-                  aria-hidden="true"
-                />
-                <span className="text-[10px] uppercase tracking-[0.16em] text-[#8A5C00]">{statusLabel}</span>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                background: 'var(--color-bg-raised-3)',
+                border: '1px solid var(--color-line)',
+              }}>
+                <span style={{
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  background: isFlipped ? 'var(--color-mint)' : 'rgba(51, 255, 51, 0.4)',
+                  boxShadow: isFlipped ? '0 0 8px rgba(51, 255, 51, 0.5)' : 'none',
+                  transition: 'all 0.3s',
+                }} />
+                <span style={{
+                  fontSize: '9px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.16em',
+                  color: 'var(--color-text)',
+                  fontFamily: 'var(--font-mono)',
+                }}>
+                  {statusLabel}
+                </span>
               </div>
             </div>
 
-            <p className="text-xs uppercase tracking-[0.18em] text-[#8A5C00]">Wallet</p>
-            <p className="mt-1 font-mono text-sm sm:text-base text-[#FFB000]">{truncateWallet(walletAddress)}</p>
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.16em',
+                color: 'var(--color-amber-dim)',
+                fontFamily: 'var(--font-mono)',
+                margin: '0 0 4px',
+              }}>
+                Wallet
+              </p>
+              <p style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '13px',
+                color: 'var(--color-amber)',
+                margin: 0,
+                opacity: 0.9,
+              }}>
+                {truncateWallet(walletAddress)}
+              </p>
+            </div>
 
-            <div className="mt-6 border border-[#C9A961]/30 bg-black/25 p-4">
-              <div className="flex items-center gap-2 text-[#8A5C00]">
-                <span className="text-xs uppercase tracking-[0.16em]">Sealed Credibility Signal</span>
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="h-7 w-40 rounded-md bg-white/10 blur-[1px]" />
-                <span className="text-xs text-[#FFB000]">
-                  Tap to unseal
-                  <span className="financial-passport-cursor ml-1">█</span>
+            <div style={{
+              marginTop: 'auto',
+              border: '1px solid var(--color-line)',
+              borderRadius: '12px',
+              background: 'rgba(0, 0, 0, 0.2)',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Lock size={14} strokeWidth={2} style={{ color: 'var(--color-amber-dim)' }} />
+                <span style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
+                  color: 'var(--color-amber-dim)',
+                  fontFamily: 'var(--font-mono)',
+                }}>
+                  Sealed Credibility Signal
                 </span>
               </div>
+              <span style={{
+                fontSize: '11px',
+                color: 'var(--color-amber)',
+                fontFamily: 'var(--font-mono)',
+                opacity: 0.6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                <Eye size={12} strokeWidth={2} />
+                Tap to unseal
+                <span className="financial-passport-cursor" style={{ marginLeft: '2px' }}>█</span>
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="financial-passport-face financial-passport-back absolute inset-0 border border-[#C9A961]/55 bg-[#0A0A0A] p-4 sm:p-5">
-          <div className="financial-passport-scanlines pointer-events-none absolute inset-0" />
-          <div className="financial-passport-text relative h-full border border-[#C9A961]/35 bg-[#0A0A0A] p-4 sm:p-5">
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-2xl sm:text-3xl text-[#FFB000]">
+        {/* Back face — Unsealed */}
+        <div
+          className="financial-passport-face financial-passport-back"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            border: '1px solid var(--color-line)',
+            borderRadius: '20px',
+            background: 'linear-gradient(145deg, #0A0C0B, #0B1815)',
+            padding: '20px',
+            overflow: 'hidden',
+          }}
+        >
+          <div className="financial-passport-scanlines" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+          <div
+            className="financial-passport-text"
+            style={{
+              position: 'relative',
+              height: '100%',
+              border: '1px solid var(--color-line)',
+              borderRadius: '14px',
+              background: 'rgba(0, 0, 0, 0.3)',
+              padding: '20px 22px',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '16px',
+            }}>
+              <h3 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(20px, 2.8vw, 26px)',
+                color: 'var(--color-amber)',
+                margin: 0,
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+              }}>
                 Financial Passport
               </h3>
-              <span className="flex items-center gap-2 border border-[#8A5C00] px-3 py-1 text-[10px] tracking-[0.2em] text-[#8A5C00]">
-                <span
-                  className={`h-2.5 w-2.5 ${isFlipped ? 'bg-[#66FF66]' : 'bg-[#33FF33]/70'} rounded-full border border-black/40`}
-                  aria-hidden="true"
-                />
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                background: 'var(--color-bg-raised-3)',
+                border: '1px solid var(--color-line)',
+                fontSize: '9px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.16em',
+                color: 'var(--color-text)',
+                fontFamily: 'var(--font-mono)',
+              }}>
+                <span style={{
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  background: 'var(--color-mint)',
+                  boxShadow: '0 0 8px rgba(51, 255, 51, 0.5)',
+                }} />
                 {statusLabel.toUpperCase()}
               </span>
             </div>
 
-            <p className="text-xs uppercase tracking-[0.18em] text-[#8A5C00]">Wallet Address</p>
-            <p className="mt-1 break-all font-mono text-[11px] sm:text-xs text-[#FFB000]">{walletAddress || 'Not connected'}</p>
+            <p style={{
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.16em',
+              color: 'var(--color-amber-dim)',
+              fontFamily: 'var(--font-mono)',
+              margin: '0 0 4px',
+            }}>
+              Wallet Address
+            </p>
+            <p style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              color: 'var(--color-amber)',
+              margin: 0,
+              wordBreak: 'break-all',
+              opacity: 0.8,
+              lineHeight: 1.4,
+            }}>
+              {walletAddress || 'Not connected'}
+            </p>
 
-            <div className="mt-6 border border-[#C9A961]/30 bg-black/30 p-4">
+            <div style={{
+              marginTop: 'auto',
+              border: '1px solid var(--color-line)',
+              borderRadius: '12px',
+              background: 'rgba(0, 0, 0, 0.25)',
+              padding: '18px',
+            }}>
               {isPending ? (
-                <div className="flex items-center gap-3 text-[#FFB000]">
-                  <Loader2 size={18} className={reducedMotion ? '' : 'animate-spin'} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--color-amber)' }}>
+                  <RefreshCw size={18} strokeWidth={1.8} className={reducedMotion ? '' : 'btn-spinner'} style={{ position: 'static' }} />
                   <div>
-                    <p className="text-sm font-medium">Computing credibility score</p>
-                    <p className="text-xs text-[#8A5C00]">Encrypted model output pending...</p>
+                    <p style={{ fontSize: '13px', fontWeight: 600, margin: 0 }}>Computing credibility score</p>
+                    <p style={{ fontSize: '11px', color: 'var(--color-amber-dim)', margin: '2px 0 0' }}>
+                      Encrypted model output pending...
+                    </p>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-end justify-between">
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#8A5C00]">Credibility Score</p>
-                    <p className="mt-1 text-4xl sm:text-5xl leading-none text-[#FFB000]">{formatScore(passportScore.score)}</p>
+                    <p style={{
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.16em',
+                      color: 'var(--color-amber-dim)',
+                      fontFamily: 'var(--font-mono)',
+                      margin: '0 0 4px',
+                    }}>
+                      Credibility Score
+                    </p>
+                    <p style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'clamp(32px, 5vw, 44px)',
+                      fontWeight: 700,
+                      color: 'var(--color-amber)',
+                      margin: 0,
+                      lineHeight: 1,
+                      letterSpacing: '-0.02em',
+                    }}>
+                      {formatScore(passportScore.score)}
+                    </p>
                   </div>
-                  <p className={`text-base sm:text-lg font-semibold ${tierAccent}`}>{passportScore.tier}</p>
+                  <span style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'clamp(14px, 2vw, 18px)',
+                    fontWeight: 700,
+                    color: tierAccent,
+                    letterSpacing: '-0.01em',
+                  }}>
+                    {passportScore.tier}
+                  </span>
                 </div>
               )}
             </div>

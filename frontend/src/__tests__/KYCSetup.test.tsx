@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import KYCSetup from '../pages/KYCSetup'
+
+vi.mock('../hooks/useCofhejs', () => ({
+  useCofhejs: () => ({ ready: false, encryptFields: undefined }),
+}))
 
 function renderWithRouter(ui: React.ReactElement) {
   return render(<BrowserRouter>{ui}</BrowserRouter>)

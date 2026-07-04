@@ -26,6 +26,11 @@ api.interceptors.response.use(
 
 export default api
 
+export interface EncryptedField {
+  data: string
+  securityZone: number
+}
+
 export const authApi = {
   supabaseLogin: (accessToken: string) =>
     api.post('/auth/supabase', { accessToken }),
@@ -34,6 +39,8 @@ export const authApi = {
 
 export const profileApi = {
   submit: (features: Record<string, number>) =>
+    api.post('/profile', { features }),
+  submitEncrypted: (features: Record<string, EncryptedField>) =>
     api.post('/profile', { features }),
   status: () => api.get('/profile/status'),
 }
@@ -54,6 +61,8 @@ export const dashboardApi = {
 
 export const kycApi = {
   submit: (fields: Record<string, string>) =>
+    api.post('/kyc/submit', { fields }),
+  submitEncrypted: (fields: Record<string, EncryptedField>) =>
     api.post('/kyc/submit', { fields }),
   verify: (checkId: number, requesterAppId: string, sessionExpiryMinutes: number) =>
     api.post('/kyc/verify', { checkId, requesterAppId, sessionExpiryMinutes }),

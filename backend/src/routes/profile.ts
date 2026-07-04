@@ -24,14 +24,9 @@ router.post("/", async (req: Request, res: Response) => {
       }
     }
 
-    const numericFeatures: Record<string, number> = {};
-    for (const field of required) {
-      numericFeatures[field] = Number(features[field]);
-    }
+    saveProfile(user!.sub, features);
 
-    saveProfile(user!.sub, numericFeatures);
-
-    res.json({ message: "Profile saved", features: numericFeatures });
+    res.json({ message: "Profile saved", features });
   } catch (err) {
     console.error("Profile save error:", err);
     res.status(500).json({ error: "Failed to save profile" });

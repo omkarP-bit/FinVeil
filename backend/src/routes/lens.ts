@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "../middleware/auth";
-import { computeMLScore } from "../services/contract";
+import { computeMLScore, submitProfile } from "../services/contract";
 import { getLenses, getProfile, addPermit, addDecision } from "../services/store";
 import { v4 as uuid } from "uuid";
 
@@ -61,19 +61,33 @@ router.post("/score", async (req: Request, res: Response) => {
       return;
     }
 
-    const features = [
-      profile.features.duration,
-      profile.features.checkNeg,
-      profile.features.checkNone,
-      profile.features.checkHigh,
-      profile.features.creditPaid,
-      profile.features.creditNone,
-    ];
+    const features = profile.features;
+    const firstVal = features[Object.keys(features)[0]];
 
-    const { decisionLabel, probability } = computeMLScore(features);
-    addDecision(user!.sub, lensId, decisionLabel, probability);
+    // Check if features are encrypted (objects with `data` property)
+    const isEncrypted = firstVal && typeof firstVal === "object" && "data" in (firstVal as object);
 
-    res.json({ decisionLabel, probability });
+    if (isEncrypted) {
+      const { requestScore: requestScoreOnChain } = await import("../services/contract");
+      const result = await requestScoreOnChain(user!.sub, lensId);
+      const probability = result ? parseFloat(result.decisionLabel.replace(/[^0-9.]/g, "") || "0.5") / 100 : 0.5;
+      addDecision(user!.sub, lensId, result.decisionLabel, probability);
+      res.json({ decisionLabel: result.decisionLabel, probability });
+    } else {
+      const featureValues = [
+        features.duration as number,
+        features.checkNeg as number,
+        features.checkNone as number,
+        features.checkHigh as number,
+        features.creditPaid as number,
+        features.creditNone as number,
+      ];
+
+      const { decisionLabel, probability } = computeMLScore(featureValues);
+      addDecision(user!.sub, lensId, decisionLabel, probability);
+
+      res.json({ decisionLabel, probability });
+    }
   } catch (err) {
     console.error("Score error:", err);
     res.status(500).json({ error: "Failed to compute score" });

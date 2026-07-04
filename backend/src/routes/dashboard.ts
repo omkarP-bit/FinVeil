@@ -22,16 +22,28 @@ router.get("/me", async (req: Request, res: Response) => {
       return;
     }
 
-    const features = [
-      profile.features.duration,
-      profile.features.checkNeg,
-      profile.features.checkNone,
-      profile.features.checkHigh,
-      profile.features.creditPaid,
-      profile.features.creditNone,
-    ];
+    const firstVal = profile.features[Object.keys(profile.features)[0]];
+    const isEncrypted = firstVal && typeof firstVal === "object" && "data" in (firstVal as object);
 
-    const { decisionLabel, probability } = computeMLScore(features);
+    let decisionLabel: string;
+    let probability: number;
+
+    if (isEncrypted) {
+      decisionLabel = "On-chain — check contract";
+      probability = 0.5;
+    } else {
+      const features = [
+        profile.features.duration as number,
+        profile.features.checkNeg as number,
+        profile.features.checkNone as number,
+        profile.features.checkHigh as number,
+        profile.features.creditPaid as number,
+        profile.features.creditNone as number,
+      ];
+      const result = computeMLScore(features);
+      decisionLabel = result.decisionLabel;
+      probability = result.probability;
+    }
 
     const healthIndex = Math.round(probability * 100);
 

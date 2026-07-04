@@ -35,11 +35,11 @@ function getContract() {
   const address = process.env.CONTRACT_ADDRESS;
   if (!address) return null;
   const abi = [
-    "function updateProfile((bytes32,bytes32) calldata duration, (bytes32,bytes32) calldata checkNeg, (bytes32,bytes32) calldata checkNone, (bytes32,bytes32) calldata checkHigh, (bytes32,bytes32) calldata creditPaid, (bytes32,bytes32) calldata creditNone) external",
+    "function updateProfile((bytes,uint8) calldata duration, (bytes,uint8) calldata checkNeg, (bytes,uint8) calldata checkNone, (bytes,uint8) calldata checkHigh, (bytes,uint8) calldata creditPaid, (bytes,uint8) calldata creditNone) external",
     "function grantOneTimePermit(address requester, bytes32 lensId, uint256 expiresAt) external",
     "function requestScore(address user, bytes32 lensId) external returns (bytes32)",
     "function getScore(address user, bytes32 lensId) external view returns (bytes32)",
-    "function submitKYC((bytes32,bytes32) calldata nameHash, (bytes32,bytes32) calldata dobEncoded, (bytes32,bytes32) calldata idHash, (bytes32,bytes32) calldata addressHash) external",
+    "function submitKYC((bytes,uint8) calldata nameHash, (bytes,uint8) calldata dobEncoded, (bytes,uint8) calldata idHash, (bytes,uint8) calldata addressHash) external",
     "function requestVerification(address user, uint8 checkId, address requester, uint256 dobCutoff) external returns (bytes32, bytes32)",
     "function lensThresholds(bytes32) external view returns (uint8,uint8,uint8,bool)",
   ];
@@ -84,17 +84,21 @@ export function computeMLScore(features: number[]): { probability: number; decis
 
 // ── On-chain wrappers (CONTRACT_ADDRESS must be set) ──
 
-export async function submitProfile(encryptedFields: Record<string, string>): Promise<string> {
+function toTuple(field: { data: string; securityZone: number }): [string, number] {
+  return [field.data, field.securityZone];
+}
+
+export async function submitProfile(encryptedFields: Record<string, { data: string; securityZone: number }>): Promise<string> {
   const contract = getContract();
   if (!contract) throw new Error("CONTRACT_ADDRESS not configured — cannot submit to chain");
 
   const tx = await contract.updateProfile(
-    encryptedFields.duration,
-    encryptedFields.checkNeg,
-    encryptedFields.checkNone,
-    encryptedFields.checkHigh,
-    encryptedFields.creditPaid,
-    encryptedFields.creditNone
+    toTuple(encryptedFields.duration),
+    toTuple(encryptedFields.checkNeg),
+    toTuple(encryptedFields.checkNone),
+    toTuple(encryptedFields.checkHigh),
+    toTuple(encryptedFields.creditPaid),
+    toTuple(encryptedFields.creditNone)
   );
   const receipt = await tx.wait();
   return receipt.hash;
@@ -151,13 +155,13 @@ export async function getLensThresholds(lensId: string) {
   return { exists: t.exists, thresholdA: t.thresholdA, thresholdB: t.thresholdB, thresholdC: t.thresholdC };
 }
 
-export async function submitKYC(encryptedFields: Record<string, string>): Promise<string> {
+export async function submitKYC(encryptedFields: Record<string, { data: string; securityZone: number }>): Promise<string> {
   const contract = getContract();
   if (!contract) throw new Error("CONTRACT_ADDRESS not configured — cannot submit KYC to chain");
 
   const tx = await contract.submitKYC(
-    encryptedFields.nameHash, encryptedFields.dobEncoded,
-    encryptedFields.idHash, encryptedFields.addressHash
+    toTuple(encryptedFields.nameHash), toTuple(encryptedFields.dobEncoded),
+    toTuple(encryptedFields.idHash), toTuple(encryptedFields.addressHash)
   );
   const receipt = await tx.wait();
   return receipt.hash;

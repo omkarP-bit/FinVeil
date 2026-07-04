@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, ArrowLeft, Loader2 } from 'lucide-react'
 import { profileApi } from '../services/api'
+import { useCofhejs } from '../hooks/useCofhejs'
 
 export default function BuildProfile() {
   const navigate = useNavigate()
+  const { encryptFields } = useCofhejs()
   const [duration, setDuration] = useState('12')
   const [checkNeg, setCheckNeg] = useState(false)
   const [checkNone, setCheckNone] = useState(false)
@@ -19,14 +21,24 @@ export default function BuildProfile() {
     setSubmitting(true)
     setError(null)
     try {
-      await profileApi.submit({
+      const plainValues = {
         duration: Number(duration),
         checkNeg: checkNeg ? 1 : 0,
         checkNone: checkNone ? 1 : 0,
         checkHigh: checkHigh ? 1 : 0,
         creditPaid: creditPaid ? 1 : 0,
         creditNone: creditNone ? 1 : 0,
-      })
+      }
+
+      const encrypted = await encryptFields(Object.values(plainValues))
+
+      if (encrypted) {
+        const [duration, checkNeg, checkNone, checkHigh, creditPaid, creditNone] = encrypted
+        await profileApi.submitEncrypted({ duration, checkNeg, checkNone, checkHigh, creditPaid, creditNone })
+      } else {
+        await profileApi.submit(plainValues)
+      }
+
       navigate('/marketplace')
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Failed to save profile')

@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, ArrowLeft, Loader2 } from 'lucide-react'
 import { kycApi } from '../services/api'
+import { useCofhejs } from '../hooks/useCofhejs'
+import { stringToUint32 } from '../services/cofhejs'
 
 export default function KYCSetup() {
   const navigate = useNavigate()
+  const { encryptFields } = useCofhejs()
   const [form, setForm] = useState({
     fullName: '',
     dob: '',
@@ -20,12 +23,26 @@ export default function KYCSetup() {
     setSubmitting(true)
     setError(null)
     try {
-      await kycApi.submit({
-        nameHash: form.fullName,
-        dobEncoded: form.dob.replace(/-/g, ''),
-        idHash: form.govId,
-        addressHash: form.address,
-      })
+      // Convert strings to uint32 values for FHE encryption
+      const nameVal = stringToUint32(form.fullName)
+      const dobVal = parseInt(form.dob.replace(/-/g, ''), 10) || 0
+      const idVal = stringToUint32(form.govId)
+      const addrVal = stringToUint32(form.address)
+
+      const encrypted = await encryptFields([nameVal, dobVal, idVal, addrVal])
+
+      if (encrypted) {
+        const [nameHash, dobEncoded, idHash, addressHash] = encrypted
+        await kycApi.submitEncrypted({ nameHash, dobEncoded, idHash, addressHash })
+      } else {
+        await kycApi.submit({
+          nameHash: form.fullName,
+          dobEncoded: form.dob.replace(/-/g, ''),
+          idHash: form.govId,
+          addressHash: form.address,
+        })
+      }
+
       setSuccess(true)
       setTimeout(() => navigate('/marketplace'), 1500)
     } catch (err: any) {

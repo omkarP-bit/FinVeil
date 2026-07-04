@@ -2,7 +2,7 @@ import { v4 as uuid } from "uuid";
 
 export interface StoredProfile {
   userId: string;
-  features: Record<string, number>;
+  features: Record<string, number | { data: string; securityZone: number }>;
   createdAt: string;
 }
 

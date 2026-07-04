@@ -1,0 +1,12 @@
+{
+  "name": "finveil",
+  "private": true,
+  "scripts": {
+    "install:all": "cd contracts && npm install && cd ../backend && npm install && cd ../frontend && npm install",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend:dev": "cd frontend && npm run dev",
+    "contracts:compile": "cd contracts && npm run compile",
+    "contracts:test": "cd contracts && npm run test",
+    "contracts:deploy": "cd contracts && npm run deploy"
+  }
+}

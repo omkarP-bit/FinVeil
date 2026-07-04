@@ -1,19 +1,20 @@
+previews:
+  generation: automatic
+
 services:
   - type: web
     name: finveil-backend
     runtime: node
     region: oregon
     plan: free
-    buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && node dist/index.js
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: "3001"
       - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
@@ -22,11 +23,12 @@ services:
       - key: SUPABASE_JWT_SECRET
         sync: false
 
-  - type: static
+  - type: web
     name: finveil-frontend
     runtime: static
     region: oregon
-    buildCommand: cd frontend && npm install && npm run build
+    rootDir: frontend
+    buildCommand: npm install && npm run build
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL

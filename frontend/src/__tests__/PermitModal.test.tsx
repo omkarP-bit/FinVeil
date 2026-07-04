@@ -7,7 +7,7 @@ describe('PermitModal', () => {
     open: true,
     appName: 'TestApp',
     lensName: 'Rental-Readiness',
-    lensDescription: 'For landlords',
+
     onDeny: vi.fn(),
     onGrant: vi.fn(),
   }

@@ -33,7 +33,7 @@ export const authApi = {
 }
 
 export const profileApi = {
-  submit: (encryptedFields: Record<string, string>) =>
+  submit: (encryptedFields: Record<string, string | [string, string]>) =>
     api.post('/profile', { encryptedFields }),
   status: () => api.get('/profile/status'),
 }
@@ -44,6 +44,7 @@ export const lensApi = {
     api.post('/lens/request', { lensId, requesterAppId }),
   grantPermit: (lensId: string, requesterAppId: string, expiryHours: number) =>
     api.post('/lens/permit/grant', { lensId, requesterAppId, expiryHours }),
+  score: (lensId: string) => api.post('/lens/score', { lensId }),
 }
 
 export const dashboardApi = {
@@ -52,8 +53,20 @@ export const dashboardApi = {
 }
 
 export const kycApi = {
-  submit: (encryptedFields: Record<string, string>) =>
+  submit: (encryptedFields: Record<string, string | [string, string]>) =>
     api.post('/kyc/submit', { encryptedFields }),
   verify: (checkId: number, requesterAppId: string, sessionExpiryMinutes: number) =>
     api.post('/kyc/verify', { checkId, requesterAppId, sessionExpiryMinutes }),
+}
+
+export const demoApi = {
+  seed: () => api.post('/demo/seed'),
+}
+
+export const verifyApi = {
+  privacy: () => api.get('/verify/privacy'),
+}
+
+export const appsApi = {
+  list: () => api.get('/apps/registry'),
 }

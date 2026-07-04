@@ -6,6 +6,7 @@ import Marketplace from './pages/Marketplace'
 import Dashboard from './pages/Dashboard'
 import AccessLog from './pages/AccessLog'
 import KYCSetup from './pages/KYCSetup'
+import DemoSeed from './pages/DemoSeed'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -15,6 +16,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={isAuthenticated ? <Marketplace /> : <Onboarding />} />
+      <Route path="/demo-seed" element={<DemoSeed />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/build-profile" element={<BuildProfile />} />

@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, ArrowLeft, Lock } from 'lucide-react'
+import { Shield, ArrowLeft, Lock, Loader2 } from 'lucide-react'
+import { profileApi } from '../services/api'
+
+function simulateEncryption(value: string | number): [string, string] {
+  const h = btoa(String(value)).slice(0, 16).padEnd(16, '0')
+  return [`0x0000000000000000000000000000000000000000000000000000${h}`, `0x0000000000000000000000000000000000000000000000000000000000000001`]
+}
 
 export default function BuildProfile() {
   const navigate = useNavigate()
@@ -8,12 +14,26 @@ export default function BuildProfile() {
   const [volatility, setVolatility] = useState(50)
   const [debtRatio, setDebtRatio] = useState('')
   const [historyScore, setHistoryScore] = useState(3)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Stub: encrypt client-side and submit
-    console.log({ income, volatility, debtRatio, historyScore })
-    navigate('/marketplace')
+    setSubmitting(true)
+    setError(null)
+    try {
+      const encryptedFields = {
+        income: simulateEncryption(income),
+        spendVolatility: simulateEncryption(volatility),
+        debtRatio: simulateEncryption(debtRatio),
+        txnHistoryScore: simulateEncryption(historyScore),
+      }
+      await profileApi.submit(encryptedFields)
+      navigate('/marketplace')
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Failed to save profile')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -105,12 +125,19 @@ export default function BuildProfile() {
           </p>
         </div>
 
+        {error && (
+          <div className="bg-danger/10 border border-danger/20 rounded-xl p-3 text-sm text-danger">
+            {error}
+          </div>
+        )}
+
         <button
           type="submit"
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors cursor-pointer"
+          disabled={submitting}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors cursor-pointer disabled:opacity-50"
         >
-          <Shield size={16} />
-          Encrypt & Save
+          {submitting ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+          {submitting ? 'Encrypting & Saving...' : 'Encrypt & Save'}
         </button>
       </form>
     </div>

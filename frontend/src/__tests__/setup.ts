@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { vi, beforeEach } from 'vitest'
+import { beforeEach } from 'vitest'
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {}

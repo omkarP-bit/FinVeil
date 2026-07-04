@@ -13,6 +13,9 @@ import lensRoutes from "./routes/lens";
 import profileRoutes from "./routes/profile";
 import dashboardRoutes from "./routes/dashboard";
 import kycRoutes from "./routes/kyc";
+import demoRoutes from "./routes/demo";
+import verifyRoutes from "./routes/verify";
+import appsRoutes from "./routes/apps";
 
 app.use(helmet());
 app.use(cors());
@@ -27,6 +30,9 @@ app.use("/profile", profileRoutes);
 app.use("/lens", lensRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/kyc", kycRoutes);
+app.use("/demo", demoRoutes);
+app.use("/verify", verifyRoutes);
+app.use("/apps", appsRoutes);
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {

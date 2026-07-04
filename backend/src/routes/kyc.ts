@@ -56,6 +56,8 @@ router.post("/verify", async (req: Request, res: Response) => {
       sessionExpiryMinutes
     );
 
+    const passed = resultHandle !== "0x0000000000000000000000000000000000000000000000000000000000000000";
+
     const token = uuid();
     const expiresAt = new Date(Date.now() + sessionExpiryMinutes * 60 * 1000).toISOString();
 
@@ -63,7 +65,9 @@ router.post("/verify", async (req: Request, res: Response) => {
       message: "Verification performed",
       token,
       sessionId,
-      resultHandle,
+      identityVerified: checkId === 0 ? passed : undefined,
+      ageMet: checkId === 1 || checkId === 2 ? passed : undefined,
+      amlPassed: checkId === 3 ? passed : undefined,
       expiresAt,
     });
   } catch (err) {

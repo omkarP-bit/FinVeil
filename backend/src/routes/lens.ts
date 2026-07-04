@@ -45,6 +45,35 @@ router.post("/request", async (req: Request, res: Response) => {
   }
 });
 
+router.post("/score", async (req: Request, res: Response) => {
+  try {
+    const { lensId } = req.body;
+    const { user } = req;
+
+    if (!lensId) {
+      res.status(400).json({ error: "lensId is required" });
+      return;
+    }
+
+    const lens = LENS_REGISTRY.find((l) => l.lensId === lensId);
+    if (!lens) {
+      res.status(404).json({ error: "Lens not found" });
+      return;
+    }
+
+    const { scoreHandle, txHash } = await requestScore(user!.wallet, lensId);
+
+    const tiers = ["Tier A — Approved", "Tier B — Approved", "Tier C — Conditional", "Declined"];
+    const tierIndex = parseInt(scoreHandle.slice(-2), 16) % tiers.length;
+    const decisionLabel = tiers[tierIndex];
+
+    res.json({ decisionLabel, scoreHandle, txHash });
+  } catch (err) {
+    console.error("Score error:", err);
+    res.status(500).json({ error: "Failed to compute score" });
+  }
+});
+
 router.post("/permit/grant", async (req: Request, res: Response) => {
   try {
     const { lensId, requesterAppId, expiryHours } = req.body;

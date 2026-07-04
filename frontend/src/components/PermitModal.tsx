@@ -5,7 +5,6 @@ interface PermitModalProps {
   open: boolean
   appName: string
   lensName: string
-  lensDescription: string
   onDeny: () => void
   onGrant: (expiryHours: number) => void
 }
@@ -14,7 +13,6 @@ export default function PermitModal({
   open,
   appName,
   lensName,
-  lensDescription,
   onDeny,
   onGrant,
 }: PermitModalProps) {

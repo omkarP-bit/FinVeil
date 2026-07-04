@@ -7,7 +7,9 @@ import KYCVerifyModal from '../components/KYCVerifyModal'
 import KYCResult from '../components/KYCResult'
 import PrivacyVerification from '../components/PrivacyVerification'
 import DemoWalkthrough from '../components/DemoWalkthrough'
+import FinancialPassport, { type PassportScoreData } from '../components/FinancialPassport'
 import { lensApi, kycApi, profileApi } from '../services/api'
+import { useAccount } from 'wagmi'
 
 const lenses = [
   { id: 'rental-readiness', name: 'Rental-Readiness', description: 'For landlords & leasing apps', icon: Home, color: 'bg-blue-50 text-blue-600' },
@@ -18,6 +20,8 @@ const lenses = [
 
 export default function Marketplace() {
   const navigate = useNavigate()
+  const { address } = useAccount()
+  const walletAddress = address ?? ''
   const [modalLens, setModalLens] = useState<typeof lenses[0] | null>(null)
   const [decision, setDecision] = useState<{ tier: string; appName: string; lensName: string } | null>(null)
   const [scoring, setScoring] = useState(false)
@@ -121,6 +125,13 @@ export default function Marketplace() {
     ? lenses.filter((l) => l.id === activeLensFilter)
     : lenses
 
+  const passportScoreMock: PassportScoreData = {
+    // TODO: replace with real model output once teammate's scoring integration is ready
+    score: 742,
+    tier: 'Tier A',
+    isLoading: false,
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -161,6 +172,8 @@ export default function Marketplace() {
           completedScenes={completedScenes}
         />
       </div>
+
+      <FinancialPassport walletAddress={walletAddress} passportScore={passportScoreMock} />
 
       <h2 className="font-semibold text-text-heading mb-4">
         {activeLensFilter ? `Lens: ${lenses.find((l) => l.id === activeLensFilter)?.name}` : 'Apply a lens'}

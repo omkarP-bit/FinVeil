@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -27,4 +28,81 @@ body {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
+}
+
+.financial-passport {
+  perspective: 1200px;
+}
+
+.financial-passport-inner {
+  transform-style: preserve-3d;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.financial-passport-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.financial-passport-back {
+  transform: rotateY(180deg);
+}
+
+.font-space-mono {
+  font-family: 'Space Mono', 'Courier New', monospace;
+}
+
+.financial-passport-scanlines {
+  opacity: 0.04;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 176, 0, 0.45) 0px,
+    rgba(255, 176, 0, 0.45) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+.financial-passport-text {
+  animation: passport-crt-flicker 150ms infinite alternate;
+}
+
+.financial-passport-cursor {
+  display: inline-block;
+  animation: passport-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes passport-crt-flicker {
+  0% {
+    opacity: 0.95;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes passport-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .financial-passport-inner {
+    transition-duration: 0ms !important;
+  }
+
+  .financial-passport-text,
+  .financial-passport-cursor {
+    animation: none;
+  }
 }

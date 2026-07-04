@@ -12,11 +12,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.2",
     "axios": "^1.7.0",
     "lucide-react": "^0.500.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.7.0",
+    "viem": "^2.54.3",
+    "wagmi": "^3.6.21",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

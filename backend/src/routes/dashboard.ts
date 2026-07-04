@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "../middleware/auth";
-import { requestScore } from "../services/contract";
+import { computeMLScore } from "../services/contract";
+import { getProfile, getDecisions, getPermits } from "../services/store";
 
 const router = Router();
 
@@ -8,57 +9,82 @@ router.use(authenticate);
 
 router.get("/me", async (req: Request, res: Response) => {
   try {
-    const { scoreHandle } = await requestScore(req.user!.wallet, "budgeting-health");
-    const healthIndex = parseInt(scoreHandle.slice(-2), 16) % 100;
+    const { user } = req;
+    const profile = getProfile(user!.sub);
 
-    const savingsTrend = [35, 42, 38, 45, 52, 48, 55, 50, 58, 62, 60, 68].map(
-      (v) => Math.min(100, Math.max(10, v + Math.floor((healthIndex - 50) * 0.3)))
-    );
-
-    const diningPct = Math.min(60, Math.max(10, 40 - Math.floor((healthIndex - 50) * 0.2)));
-    const transportPct = Math.min(40, Math.max(10, 20));
-    const rentPct = Math.min(50, Math.max(15, 32));
-    const otherPct = Math.max(5, 100 - diningPct - transportPct - rentPct);
-
-    const anomalies: Array<{ message: string; severity: string }> = [];
-    if (healthIndex < 40) {
-      anomalies.push({ message: "Spending exceeds recommended threshold — consider budgeting adjustments", severity: "warning" });
+    if (!profile) {
+      res.json({
+        profileExists: false,
+        savingsTrend: [],
+        spendingBreakdown: [],
+        anomalies: [{ message: "Build your FinVeil profile to see personalized analytics", severity: "info" }],
+      });
+      return;
     }
-    if (healthIndex < 25) {
-      anomalies.push({ message: "High debt-to-income ratio detected", severity: "warning" });
-    }
+
+    const features = [
+      profile.features.duration,
+      profile.features.checkNeg,
+      profile.features.checkNone,
+      profile.features.checkHigh,
+      profile.features.creditPaid,
+      profile.features.creditNone,
+    ];
+
+    const { decisionLabel, probability } = computeMLScore(features);
+
+    const healthIndex = Math.round(probability * 100);
+
+    const recentDecisions = getDecisions(user!.sub).slice(-4);
 
     res.json({
-      savingsTrend,
+      profileExists: true,
+      healthIndex,
+      tier: decisionLabel,
+      savingsTrend: [35, 42, 38, 45, 52, 48, 55, 50, 58, 62, 60, 68].map(
+        (v) => Math.min(100, Math.max(10, v + Math.round((healthIndex - 50) * 0.3)))
+      ),
       spendingBreakdown: [
-        { label: "Dining", percentage: diningPct },
-        { label: "Transport", percentage: transportPct },
-        { label: "Rent", percentage: rentPct },
-        { label: "Other", percentage: otherPct },
+        { label: "Dining", percentage: Math.min(60, Math.max(10, 40 - Math.round((healthIndex - 50) * 0.2))) },
+        { label: "Transport", percentage: 20 },
+        { label: "Rent", percentage: 32 },
+        { label: "Other", percentage: Math.max(5, 100 - Math.min(60, Math.max(10, 40 - Math.round((healthIndex - 50) * 0.2))) - 20 - 32) },
       ],
-      anomalies,
+      anomalies: [
+        ...(healthIndex < 40 ? [{ message: "Spending exceeds recommended threshold — consider budgeting adjustments", severity: "warning" as const }] : []),
+        ...(healthIndex < 25 ? [{ message: "High debt-to-income ratio detected", severity: "warning" as const }] : []),
+        ...(recentDecisions.length > 0 ? [] : [{ message: "No lens scores computed yet — request a lens score to see personalized insights", severity: "info" as const }]),
+      ],
     });
   } catch {
     res.json({
-      savingsTrend: [35, 42, 38, 45, 52, 48, 55, 50, 58, 62, 60, 68],
-      spendingBreakdown: [
-        { label: "Dining", percentage: 40 },
-        { label: "Transport", percentage: 20 },
-        { label: "Rent", percentage: 32 },
-        { label: "Other", percentage: 8 },
-      ],
-      anomalies: [{ message: "Dining spending is up 40% month-over-month", severity: "warning" }],
+      profileExists: false,
+      savingsTrend: [],
+      spendingBreakdown: [],
+      anomalies: [{ message: "Build your FinVeil profile to see personalized analytics", severity: "info" }],
     });
   }
 });
 
 router.get("/access-log", async (req: Request, res: Response) => {
-  res.json({
-    permits: [
-      { app: "GreenLeaf Rentals", lens: "Rental-Readiness", status: "used", time: "2 hrs ago" },
-      { app: "PayLater Co.", lens: "BNPL Affordability", status: "used", time: "5 days ago" },
-    ],
-  });
+  const { user } = req;
+  const userPermits = getPermits(user!.sub).map((p) => ({
+    app: p.requesterAppId,
+    lens: p.lensId,
+    status: p.used ? "used" : "active",
+    time: timeAgo(p.grantedAt),
+  }));
+  res.json({ permits: userPermits });
 });
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60) return `${mins} mins ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hrs ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} days ago`;
+}
 
 export default router;

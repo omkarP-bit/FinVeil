@@ -8,11 +8,6 @@ const app = express();
 app.use(express.json());
 app.use("/lens", lensRoutes);
 
-vi.mock("../services/contract", () => ({
-  grantPermit: vi.fn().mockResolvedValue("0xmock_tx_hash"),
-  requestScore: vi.fn().mockResolvedValue({ scoreHandle: "0xscore", txHash: "0xtx" }),
-}));
-
 function authedGet(url: string) {
   const token = issueAccessToken({ sub: "user1", wallet: "0xwallet" });
   return request(app).get(url).set("Authorization", `Bearer ${token}`);
@@ -71,7 +66,6 @@ describe("Lens Routes", () => {
     expect(res.status).toBe(200);
     expect(res.body.message).toBe("Permit granted");
     expect(res.body).toHaveProperty("permitId");
-    expect(res.body).toHaveProperty("txHash");
     expect(res.body).toHaveProperty("expiresAt");
   });
 

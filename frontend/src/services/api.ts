@@ -27,14 +27,14 @@ api.interceptors.response.use(
 export default api
 
 export const authApi = {
-  oauthCallback: (provider: string, code: string) =>
-    api.post('/auth/oauth/callback', { provider, code }),
+  supabaseLogin: (accessToken: string) =>
+    api.post('/auth/supabase', { accessToken }),
   refresh: () => api.post('/auth/refresh'),
 }
 
 export const profileApi = {
-  submit: (encryptedFields: Record<string, string | [string, string]>) =>
-    api.post('/profile', { encryptedFields }),
+  submit: (features: Record<string, number>) =>
+    api.post('/profile', { features }),
   status: () => api.get('/profile/status'),
 }
 
@@ -53,14 +53,10 @@ export const dashboardApi = {
 }
 
 export const kycApi = {
-  submit: (encryptedFields: Record<string, string | [string, string]>) =>
-    api.post('/kyc/submit', { encryptedFields }),
+  submit: (fields: Record<string, string>) =>
+    api.post('/kyc/submit', { fields }),
   verify: (checkId: number, requesterAppId: string, sessionExpiryMinutes: number) =>
     api.post('/kyc/verify', { checkId, requesterAppId, sessionExpiryMinutes }),
-}
-
-export const demoApi = {
-  seed: () => api.post('/demo/seed'),
 }
 
 export const verifyApi = {

@@ -10,7 +10,7 @@ const SCENES = [
     appName: 'GreenLeaf Rentals',
     icon: Home,
     color: 'bg-blue-50 text-blue-600',
-    expectedOutcome: 'Alice\'s high income and low debt → Tier A — Approved',
+    expectedOutcome: 'Alice\'s strong financial profile → Tier A — Approved',
   },
   {
     id: 'bnpl',

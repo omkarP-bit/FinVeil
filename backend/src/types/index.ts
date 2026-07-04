@@ -12,10 +12,22 @@ export interface JWTPayload {
 }
 
 export interface ProfileSubmission {
-  income: string;
-  spendVolatility: string;
-  debtRatio: string;
-  txnHistoryScore: string;
+  duration: string;
+  checkNeg: string;
+  checkNone: string;
+  checkHigh: string;
+  creditPaid: string;
+  creditNone: string;
+}
+
+export interface ModelConstants {
+  SCALE: number;
+  FEATURE_SCALE: number;
+  OFFSET: number;
+  POLY_SCALE: number;
+  WEIGHTS: number[];
+  BIAS: number;
+  POLY_COEFFS: number[];
 }
 
 export interface LensRequest {

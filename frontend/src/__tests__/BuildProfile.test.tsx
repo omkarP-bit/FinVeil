@@ -12,19 +12,13 @@ describe('BuildProfile Page', () => {
     renderWithRouter(<BuildProfile />)
 
     expect(screen.getByText('Build Your FinVeil Profile')).toBeInTheDocument()
-    expect(screen.getByText('Monthly Income')).toBeInTheDocument()
-    expect(screen.getByText('Spend Volatility')).toBeInTheDocument()
-    expect(screen.getByText('Debt Ratio')).toBeInTheDocument()
-    expect(screen.getByText('Transaction History')).toBeInTheDocument()
+    expect(screen.getByText('Loan Duration (months)')).toBeInTheDocument()
+    expect(screen.getByText('Checking Account Status')).toBeInTheDocument()
+    expect(screen.getByText('Credit History')).toBeInTheDocument()
   })
 
-  it('renders encryption notice', () => {
+  it('renders save button', () => {
     renderWithRouter(<BuildProfile />)
-    expect(screen.getByText(/Encrypted on this device/)).toBeInTheDocument()
-  })
-
-  it('renders submit button', () => {
-    renderWithRouter(<BuildProfile />)
-    expect(screen.getByText('Encrypt & Save')).toBeInTheDocument()
+    expect(screen.getByText('Save Profile')).toBeInTheDocument()
   })
 })

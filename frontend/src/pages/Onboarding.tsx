@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Play } from 'lucide-react'
+import { Shield } from 'lucide-react'
+import { supabase } from '../services/supabase'
 import { authApi } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 
@@ -8,17 +9,46 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleOAuth = async (provider: string) => {
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.access_token) {
+        setLoading(true)
+        setError(null)
+        try {
+          const { data } = await authApi.supabaseLogin(session.access_token)
+          login(data.user, data.accessToken)
+          if (data.profileExists) {
+            navigate('/marketplace')
+          } else {
+            navigate('/new-user')
+          }
+        } catch {
+          setError('Authentication failed. Please try again.')
+          setLoading(false)
+        }
+      }
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [navigate, login])
+
+  const handleGoogleSignIn = async () => {
     setLoading(true)
+    setError(null)
     try {
-      const { data } = await authApi.oauthCallback(provider, `${provider}-code-demo`)
-      login(data.user, data.accessToken)
-      navigate('/marketplace')
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin },
+      })
+      if (oauthError) throw oauthError
     } catch {
+      setError('Failed to open Google sign-in. Check your Supabase configuration.')
       setLoading(false)
     }
   }
+
+  const missingConfig = !import.meta.env.VITE_SUPABASE_ANON_KEY || !import.meta.env.VITE_SUPABASE_URL
 
   return (
     <div className="flex flex-col items-center justify-center min-h-svh px-4">
@@ -33,8 +63,8 @@ export default function Onboarding() {
 
       <div className="flex flex-col gap-3 w-full max-w-sm">
         <button
-          onClick={() => handleOAuth('google')}
-          disabled={loading}
+          onClick={handleGoogleSignIn}
+          disabled={loading || missingConfig}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-white font-medium text-sm text-text hover:bg-surface-alt transition-colors cursor-pointer disabled:opacity-50"
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
@@ -46,33 +76,30 @@ export default function Onboarding() {
           Continue with Google
         </button>
         <button
-          onClick={() => handleOAuth('apple')}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-white font-medium text-sm text-text hover:bg-surface-alt transition-colors cursor-pointer disabled:opacity-50"
+          disabled
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border bg-white font-medium text-sm text-text opacity-50 cursor-not-allowed"
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
           </svg>
-          Continue with Apple
-        </button>
-
-        <div className="relative my-2">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-background px-2 text-text-muted">or</span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => navigate('/demo-seed')}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary/5 border border-primary/20 text-primary font-medium text-sm hover:bg-primary/10 transition-colors cursor-pointer"
-        >
-          <Play size={16} />
-          Quick Demo (seed users)
+          Continue with Apple (coming soon)
         </button>
       </div>
+
+      {missingConfig && (
+        <p className="mt-4 text-xs text-warning text-center">
+          Supabase not configured. Add <code className="bg-surface-alt px-1 rounded">VITE_SUPABASE_URL</code> and{' '}
+          <code className="bg-surface-alt px-1 rounded">VITE_SUPABASE_ANON_KEY</code> to <code className="bg-surface-alt px-1 rounded">frontend/.env</code>.
+        </p>
+      )}
+
+      {error && (
+        <p className="mt-4 text-sm text-danger">{error}</p>
+      )}
+
+      {loading && (
+        <p className="mt-4 text-sm text-text-muted">Signing in...</p>
+      )}
 
       <p className="text-xs text-text-muted mt-6 text-center max-w-xs leading-relaxed">
         Your numbers never leave your device unencrypted.

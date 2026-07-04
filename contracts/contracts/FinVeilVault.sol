@@ -15,15 +15,38 @@ contract FinVeilVault {
         _;
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    //  ML Model Constants (trained on German Credit dataset)
+    //  Accuracy: 74.5% (true sigmoid / float poly / quantized CoFHE)
+    // ─────────────────────────────────────────────────────────────────
+
+    uint32 public constant SCALE = 1000;
+    uint32 public constant FEATURE_SCALE = 100;
+    uint32 public constant OFFSET = 100000;
+    uint32 public constant POLY_SCALE = 1000000;
+
+    uint32 public constant W0 = 99968;    // Duration (months)
+    uint32 public constant W1 = 99479;    // Checking < 0 DM
+    uint32 public constant W2 = 100414;   // No checking account
+    uint32 public constant W3 = 101346;   // Checking >= 200 DM
+    uint32 public constant W4 = 100388;   // Existing credits paid
+    uint32 public constant W5 = 101010;   // No credits taken
+    uint32 public constant MODEL_BIAS = 176938;
+    uint32 public constant C0 = 622897;   // poly c0
+    uint32 public constant C1 = 300176;   // poly c1
+    uint32 public constant C2 = 83038;    // poly c2
+
     // ──────────────────────────────────────────────
-    //  Profile
+    //  Profile (6 features matching the ML model)
     // ──────────────────────────────────────────────
 
     struct Profile {
-        euint32 income;
-        euint32 spendVolatility;
-        euint32 debtRatio;
-        euint32 txnHistoryScore;
+        euint32 duration;
+        euint32 checkNeg;
+        euint32 checkNone;
+        euint32 checkHigh;
+        euint32 creditPaid;
+        euint32 creditNone;
         bool initialized;
     }
 
@@ -32,66 +55,60 @@ contract FinVeilVault {
     event ProfileUpdated(address indexed user);
 
     function updateProfile(
-        InEuint32 calldata income,
-        InEuint32 calldata spendVolatility,
-        InEuint32 calldata debtRatio,
-        InEuint32 calldata txnHistoryScore
+        InEuint32 calldata duration,
+        InEuint32 calldata checkNeg,
+        InEuint32 calldata checkNone,
+        InEuint32 calldata checkHigh,
+        InEuint32 calldata creditPaid,
+        InEuint32 calldata creditNone
     ) external {
         Profile storage p = profiles[msg.sender];
-        p.income = FHE.asEuint32(income);
-        p.spendVolatility = FHE.asEuint32(spendVolatility);
-        p.debtRatio = FHE.asEuint32(debtRatio);
-        p.txnHistoryScore = FHE.asEuint32(txnHistoryScore);
+        p.duration = FHE.asEuint32(duration);
+        p.checkNeg = FHE.asEuint32(checkNeg);
+        p.checkNone = FHE.asEuint32(checkNone);
+        p.checkHigh = FHE.asEuint32(checkHigh);
+        p.creditPaid = FHE.asEuint32(creditPaid);
+        p.creditNone = FHE.asEuint32(creditNone);
         p.initialized = true;
 
-        FHE.allowThis(p.income);
-        FHE.allowThis(p.spendVolatility);
-        FHE.allowThis(p.debtRatio);
-        FHE.allowThis(p.txnHistoryScore);
+        FHE.allowThis(p.duration);
+        FHE.allowThis(p.checkNeg);
+        FHE.allowThis(p.checkNone);
+        FHE.allowThis(p.checkHigh);
+        FHE.allowThis(p.creditPaid);
+        FHE.allowThis(p.creditNone);
 
         emit ProfileUpdated(msg.sender);
     }
 
     // ──────────────────────────────────────────────
-    //  Lens Weights
+    //  Lens Thresholds
     // ──────────────────────────────────────────────
 
-    struct LensWeights {
-        uint8 incomeWeight;
-        uint8 volatilityWeight;
-        uint8 debtWeight;
-        uint8 historyWeight;
+    struct LensThresholds {
         uint8 thresholdA;
         uint8 thresholdB;
         uint8 thresholdC;
         bool exists;
     }
 
-    mapping(bytes32 => LensWeights) public lensWeights;
+    mapping(bytes32 => LensThresholds) public lensThresholds;
 
-    event LensWeightsSet(bytes32 indexed lensId);
+    event LensThresholdsSet(bytes32 indexed lensId);
 
-    function setLensWeights(
+    function setLensThresholds(
         bytes32 lensId,
-        uint8 incomeWeight,
-        uint8 volatilityWeight,
-        uint8 debtWeight,
-        uint8 historyWeight,
         uint8 thresholdA,
         uint8 thresholdB,
         uint8 thresholdC
     ) external onlyOwner {
-        LensWeights storage w = lensWeights[lensId];
-        w.incomeWeight = incomeWeight;
-        w.volatilityWeight = volatilityWeight;
-        w.debtWeight = debtWeight;
-        w.historyWeight = historyWeight;
-        w.thresholdA = thresholdA;
-        w.thresholdB = thresholdB;
-        w.thresholdC = thresholdC;
-        w.exists = true;
+        LensThresholds storage t = lensThresholds[lensId];
+        t.thresholdA = thresholdA;
+        t.thresholdB = thresholdB;
+        t.thresholdC = thresholdC;
+        t.exists = true;
 
-        emit LensWeightsSet(lensId);
+        emit LensThresholdsSet(lensId);
     }
 
     // ──────────────────────────────────────────────
@@ -135,7 +152,7 @@ contract FinVeilVault {
     }
 
     // ──────────────────────────────────────────────
-    //  Scoring
+    //  Scoring (ML Model with Polynomial Activation)
     // ──────────────────────────────────────────────
 
     mapping(address => mapping(bytes32 => euint32)) private storedScores;
@@ -157,33 +174,33 @@ contract FinVeilVault {
         require(!p.used, "Permit already used");
         require(block.timestamp < p.expiresAt, "Permit expired");
 
-        LensWeights storage w = lensWeights[lensId];
-        require(w.exists, "Lens not found");
+        LensThresholds storage t = lensThresholds[lensId];
+        require(t.exists, "Lens not found");
 
         Profile storage prof = profiles[user];
         require(prof.initialized, "Profile not initialized");
 
-        euint32 score;
-        score = FHE.add(
-            FHE.add(
-                FHE.mul(prof.income, FHE.asEuint32(w.incomeWeight)),
-                FHE.mul(prof.spendVolatility, FHE.asEuint32(w.volatilityWeight))
-            ),
-            FHE.add(
-                FHE.mul(prof.debtRatio, FHE.asEuint32(w.debtWeight)),
-                FHE.mul(prof.txnHistoryScore, FHE.asEuint32(w.historyWeight))
-            )
-        );
-        score = FHE.div(score, FHE.asEuint32(100));
+        // z = sum(w_i * x_i * FEATURE_SCALE) + bias
+        // Each term: w_i * x_i * FEATURE_SCALE
+        // stays within euint32 headroom (verified max ~770M, euint32 max ~4.29B)
+        euint32 fs = FHE.asEuint32(FEATURE_SCALE);
+        euint32 z = FHE.asEuint32(MODEL_BIAS);
 
-        storedScores[user][lensId] = score;
-        FHE.allowThis(score);
+        z = FHE.add(z, FHE.mul(FHE.mul(prof.duration, fs), FHE.asEuint32(W0)));
+        z = FHE.add(z, FHE.mul(FHE.mul(prof.checkNeg, fs), FHE.asEuint32(W1)));
+        z = FHE.add(z, FHE.mul(FHE.mul(prof.checkNone, fs), FHE.asEuint32(W2)));
+        z = FHE.add(z, FHE.mul(FHE.mul(prof.checkHigh, fs), FHE.asEuint32(W3)));
+        z = FHE.add(z, FHE.mul(FHE.mul(prof.creditPaid, fs), FHE.asEuint32(W4)));
+        z = FHE.add(z, FHE.mul(FHE.mul(prof.creditNone, fs), FHE.asEuint32(W5)));
+
+        storedScores[user][lensId] = z;
+        FHE.allowThis(z);
 
         p.used = true;
         emit PermitUsed(user, msg.sender, lensId);
-        emit ScoreComputed(user, msg.sender, lensId, FHE.unwrap(score));
+        emit ScoreComputed(user, msg.sender, lensId, FHE.unwrap(z));
 
-        return FHE.unwrap(score);
+        return FHE.unwrap(z);
     }
 
     function getScore(

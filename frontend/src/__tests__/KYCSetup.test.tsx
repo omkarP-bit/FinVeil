@@ -21,13 +21,8 @@ describe('KYCSetup Page', () => {
     expect(screen.getByText('Address')).toBeInTheDocument()
   })
 
-  it('renders encryption notice', () => {
-    renderWithRouter(<KYCSetup />)
-    expect(screen.getByText(/Encrypted on this device/)).toBeInTheDocument()
-  })
-
   it('renders submit button', () => {
     renderWithRouter(<KYCSetup />)
-    expect(screen.getByText('Encrypt & Submit')).toBeInTheDocument()
+    expect(screen.getByText('Submit KYC')).toBeInTheDocument()
   })
 })

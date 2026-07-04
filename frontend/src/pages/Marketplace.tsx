@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Home, CreditCard, Building, BarChart3, CheckCircle, Loader2, Play } from 'lucide-react'
+import { Shield, Home, CreditCard, Building, BarChart3, CheckCircle, Loader2 } from 'lucide-react'
 import PermitModal from '../components/PermitModal'
 import DecisionResult from '../components/DecisionResult'
 import KYCVerifyModal from '../components/KYCVerifyModal'
@@ -11,21 +11,32 @@ import FinancialPassport, { type PassportScoreData } from '../components/Financi
 import { lensApi, kycApi, profileApi } from '../services/api'
 import { useAccount } from 'wagmi'
 
-const lenses = [
+const LENSES = [
   { id: 'rental-readiness', name: 'Rental-Readiness', description: 'For landlords & leasing apps', icon: Home, color: 'bg-blue-50 text-blue-600' },
   { id: 'bnpl-affordability', name: 'BNPL Affordability', description: 'For buy-now-pay-later apps', icon: CreditCard, color: 'bg-emerald-50 text-emerald-600' },
   { id: 'credit-tier', name: 'Credit Tier', description: 'For lenders', icon: Building, color: 'bg-amber-50 text-amber-600' },
   { id: 'budgeting-health', name: 'Budgeting Health', description: 'Personal financial health', icon: BarChart3, color: 'bg-purple-50 text-purple-600' },
 ]
 
+function getAppNameForLens(lensId: string) {
+  const map: Record<string, string> = {
+    'rental-readiness': 'GreenLeaf Rentals',
+    'bnpl-affordability': 'PayLater Co.',
+    'credit-tier': 'Northgate Bank',
+    'budgeting-health': 'FinVeil Dashboard',
+  }
+  return map[lensId] || 'Demo App'
+}
+
 export default function Marketplace() {
   const navigate = useNavigate()
   const { address } = useAccount()
   const walletAddress = address ?? ''
-  const [modalLens, setModalLens] = useState<typeof lenses[0] | null>(null)
+  const [modalLens, setModalLens] = useState<typeof LENSES[0] | null>(null)
   const [decision, setDecision] = useState<{ tier: string; appName: string; lensName: string } | null>(null)
   const [scoring, setScoring] = useState(false)
   const [profileStatus, setProfileStatus] = useState<{ exists: boolean; lastUpdatedAt?: string } | null>(null)
+  const [passportScore, setPassportScore] = useState<PassportScoreData>({ score: null, tier: null, isLoading: true })
 
   const [kycModalOpen, setKycModalOpen] = useState(false)
   const [kycResult, setKycResult] = useState<{
@@ -44,11 +55,24 @@ export default function Marketplace() {
     profileApi.status().then(({ data }) => setProfileStatus(data)).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    lensApi.score('budgeting-health')
+      .then(({ data }) => {
+        const tierLabel = data.decisionLabel as string
+        const tier = tierLabel.startsWith('Tier A') ? 'Tier A'
+          : tierLabel.startsWith('Tier B') ? 'Tier B'
+          : tierLabel.startsWith('Tier C') ? 'Tier C'
+          : 'Declined' as const
+        setPassportScore({ score: Math.round((data.probability ?? 0) * 1000), tier, isLoading: false })
+      })
+      .catch(() => setPassportScore({ score: null, tier: null, isLoading: false }))
+  }, [])
+
   const completeScene = useCallback((sceneId: string) => {
     setCompletedScenes((prev) => (prev.includes(sceneId) ? prev : [...prev, sceneId]))
   }, [])
 
-  const handleRequest = (lens: typeof lenses[0]) => {
+  const handleRequest = (lens: typeof LENSES[0]) => {
     setModalLens(lens)
   }
 
@@ -70,9 +94,8 @@ export default function Marketplace() {
         }
       }
     } catch {
-      const fallback = ['Tier A — Approved', 'Tier B — Approved', 'Tier C — Conditional', 'Declined']
       setDecision({
-        tier: fallback[Math.floor(Math.random() * fallback.length)],
+        tier: 'Error — could not compute score',
         appName: getAppNameForLens(modalLens.id),
         lensName: modalLens.name,
       })
@@ -80,16 +103,6 @@ export default function Marketplace() {
       setScoring(false)
       setModalLens(null)
     }
-  }
-
-  const getAppNameForLens = (lensId: string) => {
-    const map: Record<string, string> = {
-      'rental-readiness': 'GreenLeaf Rentals',
-      'bnpl-affordability': 'PayLater Co.',
-      'credit-tier': 'Northgate Bank',
-      'budgeting-health': 'FinVeil Dashboard',
-    }
-    return map[lensId] || 'Demo App'
   }
 
   const runDemoScene = (sceneId: string) => {
@@ -110,8 +123,8 @@ export default function Marketplace() {
       })
     } catch {
       setKycResult({
-        identityVerified: true,
-        ageMet: true,
+        identityVerified: false,
+        ageMet: false,
         sessionExpiryMinutes,
         appName: 'Northgate Bank',
       })
@@ -122,15 +135,8 @@ export default function Marketplace() {
   }
 
   const filteredLenses = activeLensFilter
-    ? lenses.filter((l) => l.id === activeLensFilter)
-    : lenses
-
-  const passportScoreMock: PassportScoreData = {
-    // TODO: replace with real model output once teammate's scoring integration is ready
-    score: 742,
-    tier: 'Tier A',
-    isLoading: false,
-  }
+    ? LENSES.filter((l) => l.id === activeLensFilter)
+    : LENSES
 
   return (
     <div>
@@ -173,10 +179,10 @@ export default function Marketplace() {
         />
       </div>
 
-      <FinancialPassport walletAddress={walletAddress} passportScore={passportScoreMock} />
+      <FinancialPassport walletAddress={walletAddress} passportScore={passportScore} />
 
       <h2 className="font-semibold text-text-heading mb-4">
-        {activeLensFilter ? `Lens: ${lenses.find((l) => l.id === activeLensFilter)?.name}` : 'Apply a lens'}
+        {activeLensFilter ? `Lens: ${LENSES.find((l) => l.id === activeLensFilter)?.name}` : 'Apply a lens'}
         {activeLensFilter && (
           <button
             onClick={() => setActiveLensFilter(null)}
@@ -232,13 +238,6 @@ export default function Marketplace() {
           KYC Setup
         </button>
         <button
-          onClick={() => navigate('/demo-seed')}
-          className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors cursor-pointer"
-        >
-          <Play size={14} className="inline mr-1.5" />
-          Demo Users
-        </button>
-        <button
           onClick={() => navigate('/access-log')}
           className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors cursor-pointer"
         >
@@ -249,8 +248,7 @@ export default function Marketplace() {
       {scoring && (
         <div className="mt-8 bg-white rounded-2xl border border-border p-8 max-w-md mx-auto text-center">
           <Loader2 size={28} className="animate-spin text-primary mx-auto mb-4" />
-          <p className="text-sm text-text-muted">Computing score homomorphically...</p>
-          <p className="text-xs text-text-muted mt-2">CoFHE is evaluating your encrypted profile — no plaintext exposed</p>
+          <p className="text-sm text-text-muted">Computing score...</p>
         </div>
       )}
 
@@ -323,7 +321,6 @@ export default function Marketplace() {
         open={!!modalLens && !scoring}
         appName={getAppNameForLens(modalLens?.id ?? '')}
         lensName={modalLens?.name ?? ''}
-
         onDeny={() => setModalLens(null)}
         onGrant={handleGrant}
       />

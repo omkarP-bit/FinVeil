@@ -8,10 +8,6 @@ const app = express();
 app.use(express.json());
 app.use("/profile", profileRoutes);
 
-vi.mock("../services/contract", () => ({
-  submitProfile: vi.fn().mockResolvedValue("0xmock_tx_hash"),
-}));
-
 function authedRequest() {
   const token = issueAccessToken({ sub: "user1", wallet: "0xwallet" });
   return request(app)
@@ -21,28 +17,29 @@ function authedRequest() {
 
 describe("Profile Routes", () => {
   it("POST /profile — rejects without auth", async () => {
-    const res = await request(app).post("/profile").send({ encryptedFields: {} });
+    const res = await request(app).post("/profile").send({ features: {} });
     expect(res.status).toBe(401);
   });
 
   it("POST /profile — accepts valid submission", async () => {
     const res = await authedRequest().send({
-      encryptedFields: {
-        income: "0xenc1",
-        spendVolatility: "0xenc2",
-        debtRatio: "0xenc3",
-        txnHistoryScore: "0xenc4",
+      features: {
+        duration: 12,
+        checkNeg: 0,
+        checkNone: 0,
+        checkHigh: 1,
+        creditPaid: 1,
+        creditNone: 0,
       },
     });
 
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe("Profile updated");
-    expect(res.body.txHash).toBe("0xmock_tx_hash");
+    expect(res.body.message).toBe("Profile saved");
   });
 
   it("POST /profile — rejects missing fields", async () => {
     const res = await authedRequest().send({
-      encryptedFields: { income: "0xenc1" },
+      features: { duration: 12 },
     });
 
     expect(res.status).toBe(400);

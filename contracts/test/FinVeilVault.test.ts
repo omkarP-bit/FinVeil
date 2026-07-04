@@ -29,10 +29,12 @@ describe("FinVeilVault", function () {
       const client = await hre.cofhe.createClientWithBatteries(user);
       const encrypted = await client
         .encryptInputs([
-          Encryptable.uint32(7500n),
-          Encryptable.uint32(3000n),
-          Encryptable.uint32(2000n),
-          Encryptable.uint32(8000n),
+          Encryptable.uint32(12n),     // duration (months)
+          Encryptable.uint32(0n),      // checkNeg
+          Encryptable.uint32(0n),      // checkNone
+          Encryptable.uint32(1n),      // checkHigh
+          Encryptable.uint32(1n),      // creditPaid
+          Encryptable.uint32(0n),      // creditNone
         ])
         .execute();
 
@@ -40,32 +42,34 @@ describe("FinVeilVault", function () {
         encrypted[0],
         encrypted[1],
         encrypted[2],
-        encrypted[3]
+        encrypted[3],
+        encrypted[4],
+        encrypted[5]
       );
       await tx.wait();
 
       const profile = await vault.profiles(user.address);
-      const plaintext = await hre.cofhe.mocks.getPlaintext(profile.income);
-      expect(plaintext).to.equal(7500n);
+      const plaintext = await hre.cofhe.mocks.getPlaintext(profile.duration);
+      expect(plaintext).to.equal(12n);
     });
   });
 
-  describe("Lens Weights", function () {
-    it("should set lens weights by owner", async function () {
+  describe("Lens Thresholds", function () {
+    it("should set lens thresholds by owner", async function () {
       const tx = await vault
         .connect(owner)
-        .setLensWeights(LENS_RENTAL, 30, 25, 25, 20, 80, 60, 40);
+        .setLensThresholds(LENS_RENTAL, 80, 60, 40);
       await tx.wait();
 
-      const w = await vault.lensWeights(LENS_RENTAL);
-      expect(w.exists).to.be.true;
-      expect(w.incomeWeight).to.equal(30);
+      const t = await vault.lensThresholds(LENS_RENTAL);
+      expect(t.exists).to.be.true;
+      expect(t.thresholdA).to.equal(80);
     });
 
-    it("should reject setting lens weights by non-owner", async function () {
+    it("should reject setting lens thresholds by non-owner", async function () {
       const tx = vault
         .connect(user)
-        .setLensWeights(LENS_BNPL, 20, 20, 30, 30, 80, 60, 40);
+        .setLensThresholds(LENS_BNPL, 75, 55, 35);
       await expect(tx).to.be.revertedWith("Not authorized");
     });
   });
@@ -84,28 +88,43 @@ describe("FinVeilVault", function () {
     });
   });
 
-  describe("Scoring", function () {
+  describe("Scoring (ML Model)", function () {
+    const SCALE = 1000;
+    const FEATURE_SCALE = 100;
+    const OFFSET = 100000;
+    const MODEL_WEIGHTS = [99968n, 99479n, 100414n, 101346n, 100388n, 101010n];
+    const MODEL_BIAS = 176938;
+    const FEATURE_VALUES = [12n, 0n, 0n, 1n, 1n, 0n]; // Alice: low-risk profile
+
+    function expectedZ(features: bigint[]): bigint {
+      let z = BigInt(MODEL_BIAS);
+      for (let i = 0; i < features.length; i++) {
+        z += MODEL_WEIGHTS[i] * features[i] * BigInt(FEATURE_SCALE);
+      }
+      return z;
+    }
+
     beforeEach(async function () {
       const client = await hre.cofhe.createClientWithBatteries(user);
       const encrypted = await client
         .encryptInputs([
-          Encryptable.uint32(7500n),
-          Encryptable.uint32(3000n),
-          Encryptable.uint32(2000n),
-          Encryptable.uint32(8000n),
+          Encryptable.uint32(FEATURE_VALUES[0]),
+          Encryptable.uint32(FEATURE_VALUES[1]),
+          Encryptable.uint32(FEATURE_VALUES[2]),
+          Encryptable.uint32(FEATURE_VALUES[3]),
+          Encryptable.uint32(FEATURE_VALUES[4]),
+          Encryptable.uint32(FEATURE_VALUES[5]),
         ])
         .execute();
 
       await vault.connect(user).updateProfile(
-        encrypted[0],
-        encrypted[1],
-        encrypted[2],
-        encrypted[3]
+        encrypted[0], encrypted[1], encrypted[2],
+        encrypted[3], encrypted[4], encrypted[5]
       );
 
       await vault
         .connect(owner)
-        .setLensWeights(LENS_RENTAL, 30, 25, 25, 20, 80, 60, 40);
+        .setLensThresholds(LENS_RENTAL, 80, 60, 40);
 
       const expiresAt = Math.floor(Date.now() / 1000) + 86400;
       await vault
@@ -113,7 +132,7 @@ describe("FinVeilVault", function () {
         .grantOneTimePermit(requester.address, LENS_RENTAL, expiresAt);
     });
 
-    it("should compute a score and store it", async function () {
+    it("should compute a score using the ML model and store it", async function () {
       const tx = await vault
         .connect(requester)
         .requestScore(user.address, LENS_RENTAL);
@@ -121,7 +140,8 @@ describe("FinVeilVault", function () {
 
       const score = await vault.getScore(user.address, LENS_RENTAL);
       const plaintext = await hre.cofhe.mocks.getPlaintext(score);
-      expect(plaintext).to.equal(5100n);
+      const expected = expectedZ(FEATURE_VALUES);
+      expect(plaintext).to.equal(expected);
     });
 
     it("should reject scoring without a valid permit", async function () {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import request from "supertest";
 import express from "express";
 import kycRoutes from "../routes/kyc";
@@ -8,14 +8,6 @@ const app = express();
 app.use(express.json());
 app.use("/kyc", kycRoutes);
 
-vi.mock("../services/contract", () => ({
-  submitKYC: vi.fn().mockResolvedValue("0xmock_kyc_tx"),
-  requestVerification: vi.fn().mockResolvedValue({
-    sessionId: "0xmock_session",
-    resultHandle: "0xmock_result",
-  }),
-}));
-
 function authedPost(url: string, body: any) {
   const token = issueAccessToken({ sub: "user1", wallet: "0xwallet" });
   return request(app).post(url).send(body).set("Authorization", `Bearer ${token}`);
@@ -23,23 +15,23 @@ function authedPost(url: string, body: any) {
 
 describe("KYC Routes", () => {
   it("POST /kyc/submit — accepts valid KYC submission", async () => {
-    const res = await authedPost("/kyc/submit", {
-      encryptedFields: {
-        nameHash: "0xenc1",
-        dobEncoded: "0xenc2",
-        idHash: "0xenc3",
-        addressHash: "0xenc4",
+    // First submit KYC data
+    const submitRes = await authedPost("/kyc/submit", {
+      fields: {
+        nameHash: "alice",
+        dobEncoded: "19900101",
+        idHash: "alice",
+        addressHash: "123 main st",
       },
     });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe("KYC submitted");
-    expect(res.body.txHash).toBe("0xmock_kyc_tx");
+    expect(submitRes.status).toBe(200);
+    expect(submitRes.body.message).toBe("KYC data saved");
   });
 
   it("POST /kyc/submit — rejects missing fields", async () => {
     const res = await authedPost("/kyc/submit", {
-      encryptedFields: { nameHash: "0xenc1" },
+      fields: { nameHash: "test" },
     });
 
     expect(res.status).toBe(400);
@@ -52,6 +44,11 @@ describe("KYC Routes", () => {
   });
 
   it("POST /kyc/verify — performs verification", async () => {
+    // Submit KYC first
+    await authedPost("/kyc/submit", {
+      fields: { nameHash: "alice", dobEncoded: "19900101", idHash: "alice", addressHash: "123 main st" },
+    });
+
     const res = await authedPost("/kyc/verify", {
       checkId: 0,
       requesterAppId: "app-1",
@@ -63,6 +60,7 @@ describe("KYC Routes", () => {
     expect(res.body).toHaveProperty("token");
     expect(res.body).toHaveProperty("sessionId");
     expect(res.body).toHaveProperty("expiresAt");
+    expect(res.body.identityVerified).toBe(true);
   });
 
   it("POST /kyc/verify — rejects invalid checkId", async () => {
@@ -82,7 +80,7 @@ describe("KYC Routes", () => {
   });
 
   it("POST /kyc/submit — rejects without auth", async () => {
-    const res = await request(app).post("/kyc/submit").send({ encryptedFields: {} });
+    const res = await request(app).post("/kyc/submit").send({ fields: {} });
     expect(res.status).toBe(401);
   });
 });

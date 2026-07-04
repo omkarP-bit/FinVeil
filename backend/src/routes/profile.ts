@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "../middleware/auth";
-import { submitProfile } from "../services/contract";
+import { saveProfile, getProfile } from "../services/store";
 
 const router = Router();
 
@@ -8,33 +8,40 @@ router.use(authenticate);
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { encryptedFields } = req.body;
+    const { features } = req.body;
+    const { user } = req;
 
-    if (!encryptedFields || typeof encryptedFields !== "object") {
-      res.status(400).json({ error: "encryptedFields object is required" });
+    if (!features || typeof features !== "object") {
+      res.status(400).json({ error: "features object is required" });
       return;
     }
 
-    const required = ["income", "spendVolatility", "debtRatio", "txnHistoryScore"];
+    const required = ["duration", "checkNeg", "checkNone", "checkHigh", "creditPaid", "creditNone"];
     for (const field of required) {
-      if (!encryptedFields[field]) {
+      if (features[field] === undefined || features[field] === null) {
         res.status(400).json({ error: `Missing field: ${field}` });
         return;
       }
     }
 
-    const txHash = await submitProfile(encryptedFields);
+    const numericFeatures: Record<string, number> = {};
+    for (const field of required) {
+      numericFeatures[field] = Number(features[field]);
+    }
 
-    res.json({ message: "Profile updated", txHash });
+    saveProfile(user!.sub, numericFeatures);
+
+    res.json({ message: "Profile saved", features: numericFeatures });
   } catch (err) {
-    console.error("Profile update error:", err);
-    res.status(500).json({ error: "Failed to update profile" });
+    console.error("Profile save error:", err);
+    res.status(500).json({ error: "Failed to save profile" });
   }
 });
 
 router.get("/status", async (req: Request, res: Response) => {
   const { user } = req;
-  res.json({ exists: !!user, lastUpdatedAt: new Date().toISOString() });
+  const profile = getProfile(user!.sub);
+  res.json({ exists: !!profile, lastUpdatedAt: profile?.createdAt ?? null });
 });
 
 export default router;

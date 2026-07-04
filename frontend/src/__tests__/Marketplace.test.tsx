@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiProvider } from 'wagmi'
 import Marketplace from '../pages/Marketplace'
+import { wagmiConfig } from '../lib/wagmi'
 
 vi.mock('../services/api', () => ({
   profileApi: {
@@ -11,7 +14,7 @@ vi.mock('../services/api', () => ({
     list: vi.fn().mockResolvedValue({ data: { lenses: [] } }),
     request: vi.fn(),
     grantPermit: vi.fn(),
-    score: vi.fn(),
+    score: vi.fn().mockResolvedValue({ data: { decisionLabel: 'Tier A — Approved', probability: 0.85 } }),
   },
   kycApi: {
     submit: vi.fn(),
@@ -29,13 +32,21 @@ vi.mock('../services/api', () => ({
   },
 }))
 
-function renderWithRouter(ui: React.ReactElement) {
-  return render(<BrowserRouter>{ui}</BrowserRouter>)
+const queryClient = new QueryClient()
+
+function renderWithProviders(ui: React.ReactElement) {
+  return render(
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>{ui}</BrowserRouter>
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
 }
 
 describe('Marketplace Page', () => {
   it('renders all lens options', async () => {
-    renderWithRouter(<Marketplace />)
+    renderWithProviders(<Marketplace />)
 
     expect(screen.getByText('Rental-Readiness')).toBeInTheDocument()
     expect(screen.getByText('BNPL Affordability')).toBeInTheDocument()
@@ -44,17 +55,17 @@ describe('Marketplace Page', () => {
   })
 
   it('renders profile status', async () => {
-    renderWithRouter(<Marketplace />)
+    renderWithProviders(<Marketplace />)
     expect(await screen.findByText('Profile active')).toBeInTheDocument()
   })
 
   it('renders dashboard button', () => {
-    renderWithRouter(<Marketplace />)
+    renderWithProviders(<Marketplace />)
     expect(screen.getByText('📊 Dashboard')).toBeInTheDocument()
   })
 
   it('renders KYC button', () => {
-    renderWithRouter(<Marketplace />)
+    renderWithProviders(<Marketplace />)
     expect(screen.getByText('KYC')).toBeInTheDocument()
   })
 })

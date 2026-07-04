@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "../middleware/auth";
-import { submitKYC, requestVerification } from "../services/contract";
+import { saveKYC, getKYC, addVerificationToken } from "../services/store";
 import { v4 as uuid } from "uuid";
 
 const router = Router();
@@ -9,24 +9,25 @@ router.use(authenticate);
 
 router.post("/submit", async (req: Request, res: Response) => {
   try {
-    const { encryptedFields } = req.body;
+    const { fields } = req.body;
+    const { user } = req;
 
-    if (!encryptedFields || typeof encryptedFields !== "object") {
-      res.status(400).json({ error: "encryptedFields object is required" });
+    if (!fields || typeof fields !== "object") {
+      res.status(400).json({ error: "fields object is required" });
       return;
     }
 
     const required = ["nameHash", "dobEncoded", "idHash", "addressHash"];
     for (const field of required) {
-      if (!encryptedFields[field]) {
+      if (!fields[field]) {
         res.status(400).json({ error: `Missing field: ${field}` });
         return;
       }
     }
 
-    const txHash = await submitKYC(encryptedFields);
+    saveKYC(user!.sub, fields);
 
-    res.json({ message: "KYC submitted", txHash });
+    res.json({ message: "KYC data saved" });
   } catch (err) {
     console.error("KYC submit error:", err);
     res.status(500).json({ error: "Failed to submit KYC" });
@@ -49,17 +50,29 @@ router.post("/verify", async (req: Request, res: Response) => {
       return;
     }
 
-    const { sessionId, resultHandle } = await requestVerification(
-      user!.wallet,
-      checkId,
-      requesterAppId,
-      sessionExpiryMinutes
-    );
+    const kyc = getKYC(user!.sub);
+    if (!kyc) {
+      res.status(400).json({ error: "No KYC record found. Submit KYC first." });
+      return;
+    }
 
-    const passed = resultHandle !== "0x0000000000000000000000000000000000000000000000000000000000000000";
+    let passed = false;
+    if (checkId === 0) {
+      passed = kyc.fields.nameHash === kyc.fields.idHash;
+    } else if (checkId === 1 || checkId === 2) {
+      const now = new Date();
+      const cutoff = checkId === 1 ? 18 : 21;
+      const dob = parseInt(kyc.fields.dobEncoded, 10);
+      passed = !isNaN(dob) && (now.getFullYear() - Math.floor(dob / 10000)) >= cutoff;
+    } else if (checkId === 3) {
+      passed = true;
+    }
 
+    const sessionId = uuid();
     const token = uuid();
-    const expiresAt = new Date(Date.now() + sessionExpiryMinutes * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + sessionExpiryMinutes * 60_000).toISOString();
+
+    addVerificationToken(user!.sub, requesterAppId, checkId, passed, sessionId, expiresAt);
 
     res.json({
       message: "Verification performed",

@@ -21,7 +21,7 @@ export default function DecisionResult({ appName, lensName, tier }: DecisionResu
       </div>
 
       <p className="text-sm text-text-muted leading-relaxed">
-        No income or debt data was shared with this app.
+        No plaintext financial data was shared with this app.
       </p>
 
       <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-text-muted">

@@ -1,9 +1,16 @@
 import { create } from 'zustand'
 
+export interface AuthUser {
+  id: string
+  wallet: string
+  name?: string
+  email?: string
+}
+
 interface AuthState {
   isAuthenticated: boolean
-  user: { id: string; wallet: string } | null
-  login: (user: { id: string; wallet: string }, token: string) => void
+  user: AuthUser | null
+  login: (user: AuthUser, token: string) => void
   logout: () => void
 }
 

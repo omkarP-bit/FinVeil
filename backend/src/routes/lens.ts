@@ -1,21 +1,15 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "../middleware/auth";
-import { requestScore, grantPermit } from "../services/contract";
+import { computeMLScore } from "../services/contract";
+import { getLenses, getProfile, addPermit, addDecision } from "../services/store";
 import { v4 as uuid } from "uuid";
 
 const router = Router();
 
 router.use(authenticate);
 
-const LENS_REGISTRY = [
-  { lensId: "rental-readiness", name: "Rental-Readiness", description: "For landlords & leasing apps" },
-  { lensId: "bnpl-affordability", name: "BNPL Affordability", description: "For buy-now-pay-later apps" },
-  { lensId: "credit-tier", name: "Credit Tier", description: "For lenders" },
-  { lensId: "budgeting-health", name: "Budgeting Health", description: "Personal financial health" },
-];
-
 router.get("/registry", async (_req: Request, res: Response) => {
-  res.json({ lenses: LENS_REGISTRY });
+  res.json({ lenses: getLenses() });
 });
 
 router.post("/request", async (req: Request, res: Response) => {
@@ -27,7 +21,7 @@ router.post("/request", async (req: Request, res: Response) => {
       return;
     }
 
-    const lens = LENS_REGISTRY.find((l) => l.lensId === lensId);
+    const lens = getLenses().find((l) => l.lensId === lensId);
     if (!lens) {
       res.status(404).json({ error: "Lens not found" });
       return;
@@ -55,19 +49,31 @@ router.post("/score", async (req: Request, res: Response) => {
       return;
     }
 
-    const lens = LENS_REGISTRY.find((l) => l.lensId === lensId);
+    const lens = getLenses().find((l) => l.lensId === lensId);
     if (!lens) {
       res.status(404).json({ error: "Lens not found" });
       return;
     }
 
-    const { scoreHandle, txHash } = await requestScore(user!.wallet, lensId);
+    const profile = getProfile(user!.sub);
+    if (!profile) {
+      res.status(400).json({ error: "No profile found. Build your profile first." });
+      return;
+    }
 
-    const tiers = ["Tier A — Approved", "Tier B — Approved", "Tier C — Conditional", "Declined"];
-    const tierIndex = parseInt(scoreHandle.slice(-2), 16) % tiers.length;
-    const decisionLabel = tiers[tierIndex];
+    const features = [
+      profile.features.duration,
+      profile.features.checkNeg,
+      profile.features.checkNone,
+      profile.features.checkHigh,
+      profile.features.creditPaid,
+      profile.features.creditNone,
+    ];
 
-    res.json({ decisionLabel, scoreHandle, txHash });
+    const { decisionLabel, probability } = computeMLScore(features);
+    addDecision(user!.sub, lensId, decisionLabel, probability);
+
+    res.json({ decisionLabel, probability });
   } catch (err) {
     console.error("Score error:", err);
     res.status(500).json({ error: "Failed to compute score" });
@@ -84,17 +90,12 @@ router.post("/permit/grant", async (req: Request, res: Response) => {
       return;
     }
 
-    const expiresAt = Math.floor(Date.now() / 1000) + expiryHours * 3600;
+    const expiresAt = new Date(Date.now() + expiryHours * 3600_000).toISOString();
     const permitId = uuid();
 
-    const txHash = await grantPermit(
-      user!.wallet,
-      requesterAppId,
-      lensId,
-      expiresAt
-    );
+    addPermit(user!.sub, lensId, requesterAppId, expiresAt);
 
-    res.json({ message: "Permit granted", permitId, txHash, expiresAt });
+    res.json({ message: "Permit granted", permitId, expiresAt });
   } catch (err) {
     console.error("Permit grant error:", err);
     res.status(500).json({ error: "Failed to grant permit" });

@@ -7,15 +7,29 @@ function getSecret(name: string): string {
   return secret;
 }
 
+function parseExpiry(value: string | undefined, fallback: string): number {
+  const raw = value || fallback;
+  const match = raw.match(/^(\d+)(m|h|d|s)$/);
+  if (!match) return 900;
+  const num = parseInt(match[1], 10);
+  switch (match[2]) {
+    case "s": return num;
+    case "m": return num * 60;
+    case "h": return num * 3600;
+    case "d": return num * 86400;
+    default: return 900;
+  }
+}
+
 export function issueAccessToken(payload: Omit<JWTPayload, "iat" | "exp">): string {
   const secret = getSecret("JWT_ACCESS_SECRET");
-  const expiry = process.env.JWT_ACCESS_EXPIRY || "15m";
+  const expiry = parseExpiry(process.env.JWT_ACCESS_EXPIRY, "15m");
   return jwt.sign(payload, secret, { expiresIn: expiry });
 }
 
 export function issueRefreshToken(payload: Pick<JWTPayload, "sub" | "wallet">): string {
   const secret = getSecret("JWT_REFRESH_SECRET");
-  const expiry = process.env.JWT_REFRESH_EXPIRY || "7d";
+  const expiry = parseExpiry(process.env.JWT_REFRESH_EXPIRY, "7d");
   return jwt.sign(payload, secret, { expiresIn: expiry });
 }
 

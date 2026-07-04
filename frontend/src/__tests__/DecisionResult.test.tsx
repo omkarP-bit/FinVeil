@@ -16,6 +16,6 @@ describe('DecisionResult', () => {
 
   it('renders privacy note', () => {
     render(<DecisionResult appName="TestApp" lensName="Lens" tier="A" />)
-    expect(screen.getByText(/No income or debt data/)).toBeInTheDocument()
+    expect(screen.getByText(/No plaintext financial data/)).toBeInTheDocument()
   })
 })

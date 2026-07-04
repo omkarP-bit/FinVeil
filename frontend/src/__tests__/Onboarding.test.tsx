@@ -3,15 +3,20 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Onboarding from '../pages/Onboarding'
 
+vi.mock('../services/supabase', () => ({
+  supabase: {
+    auth: {
+      onAuthStateChange: vi.fn(() => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      })),
+      signInWithOAuth: vi.fn(),
+    },
+  },
+}))
+
 vi.mock('../services/api', () => ({
   authApi: {
-    oauthCallback: vi.fn().mockResolvedValue({
-      data: {
-        accessToken: 'mock-token',
-        refreshToken: 'mock-refresh',
-        user: { id: 'user-1', wallet: '0xwallet' },
-      },
-    }),
+    supabaseLogin: vi.fn(),
     refresh: vi.fn(),
   },
 }))
@@ -27,14 +32,22 @@ describe('Onboarding Page', () => {
     expect(screen.getByText('Your Encrypted Financial Passport')).toBeInTheDocument()
   })
 
-  it('renders OAuth buttons', () => {
+  it('renders Google button', () => {
     render(
       <MemoryRouter>
         <Onboarding />
       </MemoryRouter>
     )
     expect(screen.getByText('Continue with Google')).toBeInTheDocument()
-    expect(screen.getByText('Continue with Apple')).toBeInTheDocument()
+  })
+
+  it('renders Apple button as disabled', () => {
+    render(
+      <MemoryRouter>
+        <Onboarding />
+      </MemoryRouter>
+    )
+    expect(screen.getByText('Continue with Apple (coming soon)')).toBeInTheDocument()
   })
 
   it('renders privacy notice', () => {

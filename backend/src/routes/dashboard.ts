@@ -89,6 +89,7 @@ router.get("/access-log", async (req: Request, res: Response) => {
   res.json({ permits: userPermits });
 });
 
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);

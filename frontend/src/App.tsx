@@ -7,6 +7,7 @@ import Marketplace from './pages/Marketplace'
 import Dashboard from './pages/Dashboard'
 import AccessLog from './pages/AccessLog'
 import KYCSetup from './pages/KYCSetup'
+import VerificationResult from './pages/VerificationResult'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/access-log" element={<AccessLog />} />
           <Route path="/kyc-setup" element={<KYCSetup />} />
+          <Route path="/verification-result" element={<VerificationResult />} />
         </Route>
       </Route>
     </Routes>

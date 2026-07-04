@@ -16,6 +16,7 @@ import kycRoutes from "./routes/kyc";
 
 import verifyRoutes from "./routes/verify";
 import appsRoutes from "./routes/apps";
+import aggregateRoutes from "./routes/aggregate";
 import { rateLimit } from "./middleware/rateLimit";
 
 app.use(helmet());
@@ -35,6 +36,7 @@ app.use("/kyc", kycRoutes);
 
 app.use("/verify", verifyRoutes);
 app.use("/apps", appsRoutes);
+app.use("/aggregate", aggregateRoutes);
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {

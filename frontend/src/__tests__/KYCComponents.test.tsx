@@ -46,8 +46,8 @@ describe('KYCResult', () => {
         sessionExpiryMinutes={30}
       />
     )
-    expect(screen.getByText('✅ Identity Verified')).toBeInTheDocument()
-    expect(screen.getByText('✅ Age Requirement Met')).toBeInTheDocument()
+    expect(screen.getByText('Identity Verified')).toBeInTheDocument()
+    expect(screen.getByText('Age Requirement Met')).toBeInTheDocument()
   })
 
   it('renders unverified state', () => {
@@ -59,8 +59,8 @@ describe('KYCResult', () => {
         sessionExpiryMinutes={30}
       />
     )
-    expect(screen.getByText('❌ Identity Not Verified')).toBeInTheDocument()
-    expect(screen.getByText('❌ Age Requirement Not Met')).toBeInTheDocument()
+    expect(screen.getByText('Identity Not Verified')).toBeInTheDocument()
+    expect(screen.getByText('Age Requirement Not Met')).toBeInTheDocument()
   })
 
   it('shows session expiry', () => {

@@ -59,6 +59,10 @@ export const dashboardApi = {
   accessLog: () => api.get('/dashboard/access-log'),
 }
 
+export const aggregateApi = {
+  byLens: (lensId: string) => api.get(`/aggregate/${lensId}`),
+}
+
 export const kycApi = {
   submit: (fields: Record<string, string>) =>
     api.post('/kyc/submit', { fields }),

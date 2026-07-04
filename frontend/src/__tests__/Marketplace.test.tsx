@@ -61,7 +61,7 @@ describe('Marketplace Page', () => {
 
   it('renders dashboard button', () => {
     renderWithProviders(<Marketplace />)
-    expect(screen.getByText('📊 Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
   })
 
   it('renders KYC button', () => {

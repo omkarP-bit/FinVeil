@@ -23,6 +23,6 @@ describe('BuildProfile Page', () => {
 
   it('renders save button', () => {
     renderWithRouter(<BuildProfile />)
-    expect(screen.getByText('Save Profile')).toBeInTheDocument()
+    expect(screen.getByText('Save Encrypted Profile')).toBeInTheDocument()
   })
 })

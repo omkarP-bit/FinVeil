@@ -9,7 +9,11 @@ async function main() {
   const [signer] = await hre.ethers.getSigners();
   console.log(`Deploying with account: ${signer.address}`);
 
-  const vault = await hre.ethers.deployContract("FinVeilVault", signer);
+  const vault = await hre.ethers.deployContract(
+    "FinVeilVault",
+    [],
+    signer
+  );
   await vault.waitForDeployment();
 
   const vaultAddress = await vault.getAddress();
@@ -79,7 +83,7 @@ async function main() {
   // Print env vars for backend
   console.log("\n--- Add to backend .env ---");
   console.log(`CONTRACT_ADDRESS=${vaultAddress}`);
-  console.log(`FHENIX_RPC_URL=${process.env.FHENIX_RPC_URL || "https://api.helium.fhenix.zone"}`);
+  console.log(`SEPOLIA_RPC_URL=${process.env.SEPOLIA_RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/<your-api-key>"}`);
 }
 
 main().catch((error) => {

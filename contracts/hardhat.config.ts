@@ -5,6 +5,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const sepoliaRpcUrl =
+  process.env.SEPOLIA_RPC_URL?.trim() || "https://eth-sepolia.g.alchemy.com/v2/<your-api-key>";
+const privateKey = process.env.PRIVATE_KEY?.trim();
+const sepoliaAccounts = privateKey ? [privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`] : [];
+
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.27",
@@ -17,10 +22,10 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
-    fhenix: {
-      url: process.env.FHENIX_RPC_URL || "https://api.helium.fhenix.zone",
-      chainId: 8008135,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    sepolia: {
+      url: sepoliaRpcUrl,
+      chainId: 11155111,
+      accounts: sepoliaAccounts,
     },
   },
   typechain: {

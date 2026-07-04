@@ -3,7 +3,7 @@
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   oauth_provider TEXT NOT NULL,
   oauth_sub TEXT NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE users (
   UNIQUE(oauth_provider, oauth_sub)
 );
 
-CREATE TABLE profiles_meta (
+CREATE TABLE IF NOT EXISTS profiles_meta (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   last_updated_at TIMESTAMPTZ,
@@ -20,21 +20,21 @@ CREATE TABLE profiles_meta (
   UNIQUE(user_id)
 );
 
-CREATE TABLE lens_registry (
+CREATE TABLE IF NOT EXISTS lens_registry (
   lens_id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
   requester_app_id TEXT NOT NULL
 );
 
-CREATE TABLE apps (
+CREATE TABLE IF NOT EXISTS apps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   api_key_hash TEXT NOT NULL,
   allowed_lenses TEXT[] NOT NULL DEFAULT '{}'
 );
 
-CREATE TABLE permits_log (
+CREATE TABLE IF NOT EXISTS permits_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   lens_id TEXT NOT NULL REFERENCES lens_registry(lens_id),
@@ -44,7 +44,7 @@ CREATE TABLE permits_log (
   used BOOLEAN NOT NULL DEFAULT false
 );
 
-CREATE TABLE decisions (
+CREATE TABLE IF NOT EXISTS decisions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   lens_id TEXT NOT NULL REFERENCES lens_registry(lens_id),
@@ -52,7 +52,7 @@ CREATE TABLE decisions (
   decided_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE kyc_meta (
+CREATE TABLE IF NOT EXISTS kyc_meta (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   last_updated_at TIMESTAMPTZ,
@@ -60,7 +60,7 @@ CREATE TABLE kyc_meta (
   UNIQUE(user_id)
 );
 
-CREATE TABLE verification_tokens (
+CREATE TABLE IF NOT EXISTS verification_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   requester_app_id UUID NOT NULL REFERENCES apps(id),
@@ -77,4 +77,5 @@ INSERT INTO lens_registry (lens_id, name, description, requester_app_id) VALUES
   ('rental-readiness', 'Rental-Readiness', 'For landlords & leasing apps', 'system'),
   ('bnpl-affordability', 'BNPL Affordability', 'For buy-now-pay-later apps', 'system'),
   ('credit-tier', 'Credit Tier', 'For lenders', 'system'),
-  ('budgeting-health', 'Budgeting Health', 'Personal financial health dashboard', 'system');
+  ('budgeting-health', 'Budgeting Health', 'Personal financial health dashboard', 'system')
+ON CONFLICT (lens_id) DO NOTHING;

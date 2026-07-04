@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "install:all": "cd contracts && npm install && cd ../backend && npm install && cd ../frontend && npm install",
+    "bootstrap": "cd backend && npm run bootstrap",
     "backend:dev": "cd backend && npm run dev",
     "frontend:dev": "cd frontend && npm run dev",
     "contracts:compile": "cd contracts && npm run compile",

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "../middleware/auth";
-import { computeMLScore } from "../services/contract";
-import { getProfile, getDecisions, getPermits } from "../services/store";
+import { computeMLScore, FEATURE_NAMES } from "../services/contract";
+import { getProfile, getDecisions, getPermits } from "../services/db";
 
 const router = Router();
 
@@ -10,62 +10,98 @@ router.use(authenticate);
 router.get("/me", async (req: Request, res: Response) => {
   try {
     const { user } = req;
-    const profile = getProfile(user!.sub);
+    const profile = await getProfile(user!.sub);
 
     if (!profile) {
       res.json({
         profileExists: false,
         savingsTrend: [],
         spendingBreakdown: [],
-        anomalies: [{ message: "Build your FinVeil profile to see personalized analytics", severity: "info" }],
+        anomalies: [
+          { message: "Build your FinVeil profile to see personalized analytics", severity: "info" },
+        ],
       });
       return;
     }
 
-    const firstVal = profile.features[Object.keys(profile.features)[0]];
-    const isEncrypted = firstVal && typeof firstVal === "object" && "data" in (firstVal as object);
-
     let decisionLabel: string;
     let probability: number;
 
-    if (isEncrypted) {
-      decisionLabel = "On-chain — check contract";
+    if (profile.is_encrypted) {
+      decisionLabel = "Encrypted — scored on chain";
       probability = 0.5;
     } else {
-      const features = [
-        profile.features.duration as number,
-        profile.features.checkNeg as number,
-        profile.features.checkNone as number,
-        profile.features.checkHigh as number,
-        profile.features.creditPaid as number,
-        profile.features.creditNone as number,
-      ];
-      const result = computeMLScore(features);
+      const result = computeMLScore(FEATURE_NAMES.map((n) => profile.features[n] as number));
       decisionLabel = result.decisionLabel;
       probability = result.probability;
     }
 
     const healthIndex = Math.round(probability * 100);
-
-    const recentDecisions = getDecisions(user!.sub).slice(-4);
+    const recentDecisions = await getDecisions(user!.sub);
+    const recent = recentDecisions.slice(-4).reverse();
 
     res.json({
       profileExists: true,
       healthIndex,
       tier: decisionLabel,
-      savingsTrend: [35, 42, 38, 45, 52, 48, 55, 50, 58, 62, 60, 68].map(
-        (v) => Math.min(100, Math.max(10, v + Math.round((healthIndex - 50) * 0.3)))
+      isEncrypted: profile.is_encrypted,
+      recentDecisions: recent.map((d) => ({
+        lens: d.lens_id,
+        label: d.decision_label,
+        probability: d.probability,
+        at: d.decided_at,
+      })),
+      savingsTrend: [35, 42, 38, 45, 52, 48, 55, 50, 58, 62, 60, 68].map((v) =>
+        Math.min(100, Math.max(10, v + Math.round((healthIndex - 50) * 0.3)))
       ),
       spendingBreakdown: [
-        { label: "Dining", percentage: Math.min(60, Math.max(10, 40 - Math.round((healthIndex - 50) * 0.2))) },
+        {
+          label: "Dining",
+          percentage: Math.min(
+            60,
+            Math.max(10, 40 - Math.round((healthIndex - 50) * 0.2))
+          ),
+        },
         { label: "Transport", percentage: 20 },
         { label: "Rent", percentage: 32 },
-        { label: "Other", percentage: Math.max(5, 100 - Math.min(60, Math.max(10, 40 - Math.round((healthIndex - 50) * 0.2))) - 20 - 32) },
+        {
+          label: "Other",
+          percentage: Math.max(
+            5,
+            100 -
+              Math.min(60, Math.max(10, 40 - Math.round((healthIndex - 50) * 0.2))) -
+              20 -
+              32
+          ),
+        },
       ],
       anomalies: [
-        ...(healthIndex < 40 ? [{ message: "Spending exceeds recommended threshold — consider budgeting adjustments", severity: "warning" as const }] : []),
-        ...(healthIndex < 25 ? [{ message: "High debt-to-income ratio detected", severity: "warning" as const }] : []),
-        ...(recentDecisions.length > 0 ? [] : [{ message: "No lens scores computed yet — request a lens score to see personalized insights", severity: "info" as const }]),
+        ...(healthIndex < 40
+          ? [
+              {
+                message:
+                  "Spending exceeds recommended threshold — consider budgeting adjustments",
+                severity: "warning" as const,
+              },
+            ]
+          : []),
+        ...(healthIndex < 25
+          ? [
+              {
+                message: "High debt-to-income ratio detected",
+                severity: "warning" as const,
+              },
+            ]
+          : []),
+        ...(recent.length > 0
+          ? []
+          : [
+              {
+                message:
+                  "No lens scores computed yet — request a lens score to see personalized insights",
+                severity: "info" as const,
+              },
+            ]),
       ],
     });
   } catch {
@@ -73,24 +109,32 @@ router.get("/me", async (req: Request, res: Response) => {
       profileExists: false,
       savingsTrend: [],
       spendingBreakdown: [],
-      anomalies: [{ message: "Build your FinVeil profile to see personalized analytics", severity: "info" }],
+      anomalies: [
+        { message: "Build your FinVeil profile to see personalized analytics", severity: "info" },
+      ],
     });
   }
 });
 
 router.get("/access-log", async (req: Request, res: Response) => {
-  const { user } = req;
-  const userPermits = getPermits(user!.sub).map((p) => ({
-    app: p.requesterAppId,
-    lens: p.lensId,
-    status: p.used ? "used" : "active",
-    time: timeAgo(p.grantedAt),
-  }));
-  res.json({ permits: userPermits });
+  try {
+    const { user } = req;
+    const permits = await getPermits(user!.sub);
+    res.json({
+      permits: permits.map((p) => ({
+        app: p.requester_app_id,
+        lens: p.lens_id,
+        status: p.used ? "used" : new Date(p.expires_at).getTime() < Date.now() ? "expired" : "active",
+        time: timeAgo(p.granted_at),
+      })),
+    });
+  } catch (err) {
+    console.error("Access log error:", err);
+    res.status(500).json({ error: "Failed to load access log" });
+  }
 });
 
-
-function timeAgo(iso: string): string {
+function timeAgo(iso: string | Date): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
   if (mins < 60) return `${mins} mins ago`;

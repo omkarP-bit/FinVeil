@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import { JWTPayload } from "../types";
 
@@ -44,7 +45,42 @@ export function verifyAccessToken(token: string): JWTPayload {
 }
 
 export function generateWallet(): string {
-  return "0x" + Array.from({ length: 40 }, () =>
-    Math.floor(Math.random() * 16).toString(16)
-  ).join("");
+  return "0x" + crypto.randomBytes(20).toString("hex");
+}
+
+// ── Password hashing (scrypt, no external dependency) ────────────────
+
+const SCRYPT_KEYLEN = 64;
+const SCRYPT_SALT_BYTES = 16;
+const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1 };
+
+export function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(SCRYPT_SALT_BYTES);
+  const derived = crypto.scryptSync(password, salt, SCRYPT_KEYLEN, SCRYPT_PARAMS);
+  return `scrypt$${salt.toString("hex")}$${derived.toString("hex")}`;
+}
+
+export function verifyPassword(password: string, stored: string | null | undefined): boolean {
+  if (!stored) return false;
+
+  const parts = stored.split("$");
+  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
+
+  let salt: Buffer;
+  let expected: Buffer;
+  try {
+    salt = Buffer.from(parts[1], "hex");
+    expected = Buffer.from(parts[2], "hex");
+  } catch {
+    return false;
+  }
+  if (salt.length === 0 || expected.length === 0) return false;
+
+  let derived: Buffer;
+  try {
+    derived = crypto.scryptSync(password, salt, expected.length, SCRYPT_PARAMS);
+  } catch {
+    return false;
+  }
+  return crypto.timingSafeEqual(derived, expected);
 }

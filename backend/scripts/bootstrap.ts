@@ -2,71 +2,53 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
-import { createClient } from "@supabase/supabase-js";
-import { Client } from "pg";
-
-type EnvMap = Record<string, string>;
+dotenv.config();
 
 const scriptPath = fileURLToPath(import.meta.url);
 const backendRoot = path.resolve(path.dirname(scriptPath), "..");
 const envPath = path.join(backendRoot, ".env");
 const examplePath = path.join(backendRoot, ".env.example");
 
-function readFileIfExists(filePath: string): string {
-  if (!fs.existsSync(filePath)) {
-    return "";
-  }
+type EnvMap = Record<string, string>;
 
-  return fs.readFileSync(filePath, "utf8");
+function readFileIfExists(filePath: string): string {
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
 }
 
 function parseEnv(content: string): EnvMap {
   const env: EnvMap = {};
-
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim();
-    if (!line || line.startsWith("#")) {
-      continue;
-    }
-
+    if (!line || line.startsWith("#")) continue;
     const equalsIndex = line.indexOf("=");
-    if (equalsIndex === -1) {
-      continue;
-    }
-
-    const key = line.slice(0, equalsIndex).trim();
-    const value = line.slice(equalsIndex + 1).trim();
-    env[key] = value;
+    if (equalsIndex === -1) continue;
+    env[line.slice(0, equalsIndex).trim()] = line.slice(equalsIndex + 1).trim();
   }
-
   return env;
 }
 
 function upsertEnvValue(content: string, key: string, value: string): string {
   const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`^${escapedKey}=.*$`, "m");
-  const replacement = `${key}=${value}`;
-
-  if (pattern.test(content)) {
-    return content.replace(pattern, replacement);
-  }
-
+  if (pattern.test(content)) return content.replace(pattern, `${key}=${value}`);
   const prefix = content.length > 0 && !content.endsWith("\n") ? "\n" : "";
-  return `${content}${prefix}${replacement}\n`;
+  return `${content}${prefix}${key}=${value}\n`;
 }
 
 function randomSecret(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
+/**
+ * Ensures backend/.env exists and carries the secrets the server refuses to
+ * start without. Database provisioning itself lives in scripts/db-setup.ts.
+ */
 async function main() {
   const exampleContent = readFileIfExists(examplePath);
   if (!fs.existsSync(envPath)) {
-    if (!exampleContent) {
-      throw new Error("Missing backend .env and .env.example");
-    }
-
+    if (!exampleContent) throw new Error("Missing backend .env and .env.example");
     fs.writeFileSync(envPath, exampleContent, "utf8");
     console.log("[bootstrap] created .env from .env.example");
   }
@@ -76,98 +58,49 @@ async function main() {
   const generated: string[] = [];
   let changed = false;
 
-  const requiredSecrets: Array<[string, string]> = [
-    ["JWT_ACCESS_SECRET", env.JWT_ACCESS_SECRET || ""],
-    ["JWT_REFRESH_SECRET", env.JWT_REFRESH_SECRET || ""],
-  ];
-
-  for (const [key, currentValue] of requiredSecrets) {
-    if (!currentValue) {
-      const value = randomSecret();
-      envContent = upsertEnvValue(envContent, key, value);
+  for (const key of ["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"]) {
+    if (!env[key]) {
+      envContent = upsertEnvValue(envContent, key, randomSecret());
       generated.push(key);
       changed = true;
     }
   }
 
-  if (!env.JWT_ACCESS_EXPIRY) {
-    envContent = upsertEnvValue(envContent, "JWT_ACCESS_EXPIRY", "15m");
-    changed = true;
+  for (const [key, value] of [
+    ["JWT_ACCESS_EXPIRY", "15m"],
+    ["JWT_REFRESH_EXPIRY", "7d"],
+  ] as const) {
+    if (!env[key]) {
+      envContent = upsertEnvValue(envContent, key, value);
+      changed = true;
+    }
   }
 
-  if (!env.JWT_REFRESH_EXPIRY) {
-    envContent = upsertEnvValue(envContent, "JWT_REFRESH_EXPIRY", "7d");
+  if (!env.DATABASE_URL) {
+    envContent = upsertEnvValue(envContent, "DATABASE_URL", "postgresql://finveil:finveil@127.0.0.1:5432/finveil");
     changed = true;
-  }
-
-  if (changed || !fs.existsSync(envPath)) {
-    fs.writeFileSync(envPath, envContent, "utf8");
   }
 
   if (changed) {
-    console.log(`[bootstrap] updated ${path.relative(backendRoot, envPath)}`);
-    if (generated.length > 0) {
-      console.log(`[bootstrap] generated missing secrets: ${generated.join(", ")}`);
-    }
+    fs.writeFileSync(envPath, envContent, "utf8");
+    console.log(`[bootstrap] updated .env${generated.length ? ` — generated ${generated.join(", ")}` : ""}`);
   } else {
-    console.log(`[bootstrap] ${path.relative(backendRoot, envPath)} is already up to date`);
+    console.log("[bootstrap] .env is already up to date");
   }
 
-  const updatedEnv = parseEnv(envContent);
-  const supabaseUrl = updatedEnv.SUPABASE_URL;
-  const supabaseServiceKey = updatedEnv.SUPABASE_SERVICE_ROLE_KEY;
-  const supabaseDbPassword = updatedEnv.SUPABASE_DB_PASSWORD;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.log("[supabase] skipped: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for remote validation");
-    console.log("[next] start the backend with: npm run dev");
-    return;
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-
-  const { error } = await supabase.from("users").select("id").limit(1);
-  if (error) {
-    console.log(`[supabase] connection reached but schema check failed: ${error.message}`);
-    if (!supabaseDbPassword) {
-      console.log("[supabase] set SUPABASE_DB_PASSWORD to let the bootstrap apply backend/supabase-schema.sql automatically");
-    }
+  const { closePool, isDatabaseConfigured, pingDatabase } = await import("../src/services/db");
+  if (!isDatabaseConfigured()) {
+    console.log("[db] skipped: DATABASE_URL is not set");
+  } else if (await pingDatabase()) {
+    console.log("[db] connection verified");
   } else {
-    console.log("[supabase] connection verified and users table is reachable");
+    console.log("[db] unreachable — run: npm run db:setup");
   }
+  await closePool().catch(() => undefined);
 
-  if (supabaseDbPassword) {
-    const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
-    const connectionString = `postgresql://postgres:${encodeURIComponent(supabaseDbPassword)}@db.${projectRef}.supabase.co:5432/postgres?sslmode=require`;
-    const client = new Client({
-      connectionString,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    });
-
-    const schemaPath = path.join(backendRoot, "supabase-schema.sql");
-    const schemaSql = fs.readFileSync(schemaPath, "utf8");
-
-    await client.connect();
-    await client.query(schemaSql);
-    await client.end();
-    console.log("[supabase] applied backend/supabase-schema.sql to the remote database");
-
-    const verified = await supabase.from("users").select("id").limit(1);
-    if (!verified.error) {
-      console.log("[supabase] users table is reachable after schema apply");
-    }
-  } else {
-    console.log("[supabase] schema apply skipped: SUPABASE_DB_PASSWORD not set");
-  }
-
-  console.log("[next] start the backend with: npm run dev");
+  console.log("[next] provision the database with: npm run db:setup");
+  console.log("[next] seed users with:            npm run db:seed");
+  console.log("[next] start the backend with:      npm run dev");
 }
 
 main().catch((error) => {
